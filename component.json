@@ -7,7 +7,7 @@
 		"Wizcorp/util": "0.1.0"
 	},
 	"scripts": [
-		"AudioManager.js",
+		"index.js",
 		"OrderedList.js",
 		"SoundGroup.js",
 		"SoundBuffered.js",
