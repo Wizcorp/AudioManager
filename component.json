@@ -1,0 +1,17 @@
+{
+	"name": "AudioManager",
+	"repo": "Wizcorp/AudioManager",
+	"version": "0.1.0",
+	"description": "Play sounds using Web Audio, fallback to HTML5 Audio",
+	"dependencies": {
+		"Wizcorp/util": "0.1.0"
+	},
+	"scripts": [
+		"index.js",
+		"OrderedList.js",
+		"SoundGroup.js",
+		"SoundBuffered.js",
+		"Sound.js",
+		"ISound.js"
+	]
+}
