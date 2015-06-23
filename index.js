@@ -1,4 +1,3 @@
-// jscs:disable requireCurlyBraces
 var AudioContext = window.AudioContext || window.webkitAudioContext;
 var OrderedList  = require('OrderedList');
 var SoundObject  = require('./SoundBuffered.js');
@@ -12,8 +11,6 @@ if (!AudioContext) {
 		SoundObject = require('./ISound.js');
 	}
 }
-
-var audioContext = null;
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 function AudioChannel() {
@@ -40,6 +37,7 @@ function AudioManager(channels) {
 	this.soundGroupArchiveById = {};
 	this.usedMemory            = 0;
 	this.channels              = {};
+	this.audioContext          = null;
 
 	// settings
 	this.settings = {
@@ -55,6 +53,10 @@ function AudioManager(channels) {
 	for (var i = 0; i < channels.length; i++) {
 		this.channels[channels[i]] = new AudioChannel();
 	}
+
+	// register self
+	SoundObject.prototype.audioManager = this;
+	SoundGroup.prototype.audioManager  = this;
 }
 
 module.exports = AudioManager;
@@ -62,11 +64,10 @@ module.exports = AudioManager;
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 AudioManager.prototype.init = function () {
-	if (audioContext || !AudioContext) { return; }
-	audioContext = new AudioContext();
-	SoundObject.prototype.audioContext = audioContext;
-	SoundObject.prototype.audioManager = this;
-	SoundGroup.prototype.audioManager  = this;
+	if (this.audioContext || !AudioContext) { return; }
+	this.audioContext = new AudioContext();
+	SoundObject.prototype.audioContext = this.audioContext;
+	
 	for (var id in this.soundsById) {
 		this.soundsById[id].init();
 	}
@@ -376,28 +377,33 @@ AudioManager.prototype.release = function () {
  *
  * @param {String} channelId - channel id used to play sound
  * @param {String} soundId   - sound id
+ * @param {number} [volume]  - optional volume value. volume:]0..1]
+ * @param {number} [pan]     - optional panoramic value. pan:[-1..1]
  */
-AudioManager.prototype.playSound = function (channelId, soundId) {
+AudioManager.prototype.playSound = function (channelId, soundId, volume, pan) {
 	var channel = this.channels[channelId];
 	if (channel.muted) { return; }
 	var sound = this.getSound(soundId);
 	if (!sound) { return; }
-	sound.play(channel.volume);
+	volume = volume || 1.0;
+	sound.play(channel.volume * volume, pan);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Play a sound group
  *
- * @param {String} soundGroupId - sound group id
- * @param {number} pan          - panoramic value. pan:[-1..1]
  * @param {String} channelId    - channel id used to play sound
+ * @param {String} soundGroupId - sound group id
+ * @param {number} [volume]     - optional volume value. volume:]0..1]
+ * @param {number} [pan]        - optional panoramic value. pan:[-1..1]
  */
-AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, pan) {
+AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, volume, pan) {
 	var channel = this.channels[channelId];
 	if (channel.muted) { return; }
 	var soundGroup = this.getSoundGroup(soundGroupId);
 	if (!soundGroup) { return; }
-	soundGroup.play(channel.volume, pan);
+	volume = volume || 1.0;
+	soundGroup.play(volume * channel.volume, pan);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄

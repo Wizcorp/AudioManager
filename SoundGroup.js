@@ -1,5 +1,3 @@
-// jscs:disable requireCurlyBraces
-
 /** Set of sound played in sequence each times it triggers
  *  used for animation sfx
  * @author Cedric Stoquer
@@ -22,7 +20,7 @@ function SoundGroup(id, soundIds, volumes, muted) {
 		} else {
 			this.audioManager.loadSound(soundIds[i]);
 		}
-		this.volumes.push(Math.max(0, Math.min(1, (~~volumes[i] / 100))));
+		this.volumes.push(Math.max(0, Math.min(1, volumes[i] || 1.0)));
 	}
 }
 module.exports = SoundGroup;
