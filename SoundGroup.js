@@ -4,7 +4,7 @@
  *
  * @param {String}       id       - animation frame id (e.g.: '569/AnimMarche_5:0')
  * @param {number[]}     soundIds - array of sound ids
- * @param {number[]}     volumes  - array of volume (for each soundId)
+ * @param {number[]}     volumes  - array of volumes
  */
 function SoundGroup(id, soundIds, volumes, muted) {
 	this.id       = id;
@@ -26,13 +26,13 @@ function SoundGroup(id, soundIds, volumes, muted) {
 module.exports = SoundGroup;
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-SoundGroup.prototype.play = function (volume, pan) {
+SoundGroup.prototype.play = function (volume, pan, pitch) {
 	if (this.length === 0) { return; }
 	var soundId = this.soundIds[this.position];
 	var sound = this.audioManager.getSound(soundId);
 	if (!sound) { return console.warn('[Sound Group: ' + this.id + '] sound id ' + soundId + '  cannot be played.'); }
 	volume *= this.volumes[this.position];
-	sound.play(volume, pan);
+	sound.play(volume, pan, pitch);
 	this.position++;
 	if (this.position >= this.length) { this.position = 0; }
 };

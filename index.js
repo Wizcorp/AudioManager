@@ -275,7 +275,7 @@ AudioManager.prototype.playLoopSound = function (channelId, id, volume) {
 			}
 			sound.setLoop(true); // TODO: loop can be a number (set in game global options)
 			sound.fade = defaultFade;
-			sound.play(channel.volume * volume, 0, true); // TODO: use streaming for music
+			sound.play(channel.volume * volume, 0); // TODO: use streaming for music
 			channel.sound = sound;
 		}
 
@@ -379,14 +379,15 @@ AudioManager.prototype.release = function () {
  * @param {String} soundId   - sound id
  * @param {number} [volume]  - optional volume value. volume:]0..1]
  * @param {number} [pan]     - optional panoramic value. pan:[-1..1]
+ * @param {number} [pitch]   - optional pitch value in semi-tone. Only work with webAudio enabled
  */
-AudioManager.prototype.playSound = function (channelId, soundId, volume, pan) {
+AudioManager.prototype.playSound = function (channelId, soundId, volume, pan, pitch) {
 	var channel = this.channels[channelId];
 	if (channel.muted) { return; }
 	var sound = this.getSound(soundId);
 	if (!sound) { return; }
 	volume = volume || 1.0;
-	sound.play(channel.volume * volume, pan);
+	sound.play(channel.volume * volume, pan, pitch);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -397,13 +398,13 @@ AudioManager.prototype.playSound = function (channelId, soundId, volume, pan) {
  * @param {number} [volume]     - optional volume value. volume:]0..1]
  * @param {number} [pan]        - optional panoramic value. pan:[-1..1]
  */
-AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, volume, pan) {
+AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, volume, pan, pitch) {
 	var channel = this.channels[channelId];
 	if (channel.muted) { return; }
 	var soundGroup = this.getSoundGroup(soundGroupId);
 	if (!soundGroup) { return; }
 	volume = volume || 1.0;
-	soundGroup.play(volume * channel.volume, pan);
+	soundGroup.play(volume * channel.volume, pan, pitch);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄

@@ -163,7 +163,7 @@ SoundBuffered.prototype.unload = function () {
 /** Play sound. If sound is not yet loaded, it is loaded in memory and flagged to be played
  *  once loading has finished. If loading take too much time, playback may be cancelled.
  */
-SoundBuffered.prototype._play = function () {
+SoundBuffered.prototype._play = function (pitch) {
 	if (!this.buffer) {
 		this._playTriggered = Date.now();
 		return;
@@ -178,6 +178,11 @@ SoundBuffered.prototype._play = function () {
 		sourceNode.onended = null;
 		self.source        = null;
 	};
+
+	if (pitch) {
+		var rate = Math.pow(2, pitch / 12);
+		sourceNode.playbackRate.value = rate;
+	}
 
 	sourceNode.loop      = this.loop;
 	this.source          = sourceNode;

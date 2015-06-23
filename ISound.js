@@ -136,10 +136,11 @@ ISound.prototype.unload = function () {
 /** Play sound. If sound is not yet loaded, it is loaded in memory and flagged to be played
  *  once loading has finished. If loading take too much time, playback may be cancelled.
  *
- * @param {number} vol - volume
- * @param {number} pan - panoramic
+ * @param {number} [vol]   - optional volume
+ * @param {number} [pan]   - optional panoramic
+ * @param {number} [pitch] - optional pitch value in semi-tone (available only if using webAudio)
  */
-ISound.prototype.play = function (vol, pan) {
+ISound.prototype.play = function (vol, pan, pitch) {
 	if (vol !== undefined) { this.setVolume(vol); }
 	if (pan !== undefined) { this.setPan(pan); }
 
@@ -149,7 +150,7 @@ ISound.prototype.play = function (vol, pan) {
 		return;
 	}
 
-	this._play();
+	this._play(pitch);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
