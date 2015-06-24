@@ -17,6 +17,9 @@ function SoundBuffered() {
 	this.panNode         = null;
 	this.rawAudioData    = null;
 
+	this._playPitch      = 0.0;
+	this._fadeTimeout    = null;
+
 	if (this.audioContext) { this.init(); }
 }
 inherits(SoundBuffered, ISound);
@@ -73,11 +76,8 @@ SoundBuffered.prototype.init = function () {
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 SoundBuffered.prototype.setVolume = function (value) {
 	this.volume = value;
-	if (this.fade) {
-		this.gain.setTargetAtTime(value, this.audioContext.currentTime, this.fade);
-	} else {
-		this.gain.value = value;
-	}
+	if (!this.playing) { return; }
+	this.gain.setTargetAtTime(value, this.audioContext.currentTime, this.fade);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -100,6 +100,20 @@ SoundBuffered.prototype.setLoop = function (value) {
 		this.source.loopStart = 0;
 		this.source.loopEnd   = this.buffer.duration;
 	}
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+/** Set sound pitch
+ *
+ * @param {number} pitch        - pitch in semi-tone
+ * @param {number} [portamento] - duration to slide from previous to new pitch.
+ */
+SoundBuffered.prototype.setPitch = function (pitch, portamento) {
+	this.pitch = pitch;
+	if (!this.source) { return; }
+	var rate = Math.pow(2, (this._playPitch + pitch) / 12);
+	portamento = portamento || 0;
+	this.source.playbackRate.setTargetAtTime(rate, this.audioContext.currentTime, portamento);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -154,8 +168,8 @@ SoundBuffered.prototype._load = function (filePath) {
 /** Unload sound from memory */
 SoundBuffered.prototype.unload = function () {
 	if (ISound.prototype.unload.call(this)) {
-		this.buffer     = null;
-		this.gain.value = 0;
+		this.buffer = null;
+		this.gain.setTargetAtTime(0, this.audioContext.currentTime, 0);
 	}
 };
 
@@ -168,7 +182,17 @@ SoundBuffered.prototype._play = function (pitch) {
 		this._playTriggered = Date.now();
 		return;
 	}
+
+	if (this._fadeTimeout) {
+		this.source.onended = null;
+		this.source.stop(0);
+		window.clearTimeout(this._fadeTimeout);
+		this._fadeTimeout = null;
+	}
+
 	this.playing = true;
+	this.gain.setTargetAtTime(this.volume, this.audioContext.currentTime, this.fade);
+
 	var sourceNode = this.audioContext.createBufferSource();
 	sourceNode.connect(this.sourceConnector);
 
@@ -179,9 +203,10 @@ SoundBuffered.prototype._play = function (pitch) {
 		self.source        = null;
 	};
 
-	if (pitch) {
-		var rate = Math.pow(2, pitch / 12);
-		sourceNode.playbackRate.value = rate;
+	this._playPitch = pitch || 0;
+	if (pitch || this.pitch) {
+		var rate = Math.pow(2, (this.pitch + this._playPitch) / 12);
+		sourceNode.playbackRate.setTargetAtTime(rate, this.audioContext.currentTime, 0);
 	}
 
 	sourceNode.loop      = this.loop;
@@ -209,13 +234,16 @@ SoundBuffered.prototype.stop = function (cb) {
 		self.source.onended = null;
 		self.source.stop(0);
 		self.source = null;
+		self._fadeTimeout = null;
 		return cb && cb();
 	}
 
 	if (this.fade) {
 		this.gain.setTargetAtTime(0, this.audioContext.currentTime, this.fade * fadeOutRatio);
-		return window.setTimeout(stopSound, this.fade * 1000);
+		this._fadeTimeout = window.setTimeout(stopSound, this.fade * 1000);
+		return;
 	}
 
 	stopSound();
 };
+

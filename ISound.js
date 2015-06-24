@@ -12,11 +12,12 @@ function ISound() {
 	this.poolRef         = null;
 
 	// the following properties are public but should NOT be assigned directly.
-	// instead, use the setter functions: setId, setVolume, setPan, setLoop.
+	// instead, use the setter functions: setId, setVolume, setPan, setLoop, setPitch.
 	this.id              = 0;
 	this.volume          = 1.0;
 	this.pan             = 0.0;
 	this.loop            = false;
+	this.pitch           = 0.0;
 
 	// private properties
 	this._src            = '';
@@ -51,6 +52,11 @@ ISound.prototype.setPan = function (value) {
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 ISound.prototype.setLoop = function (value) {
 	this.loop = value;
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+ISound.prototype.setPitch = function (pitch) {
+	this.pitch = pitch;
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄

@@ -28,49 +28,56 @@ By default, channel volume is set to 0 and channel is muted.
 No sounds will play until channel volume is set.
 ```javascript
 var volume = 1.0; // volume is a float in range ]0..1]
-audioManager.setVolume('sfx', volume);
+audioManager.setVolume('ui', volume);
 ```
 
 ### Create and play a simple sound.
-Create a new sound.
+Create a sound and playing it in a channel.
 ```javascript
-var fileName = 'sound1'; // fileName is sound path without '.mp3' extension
-audioManager.createSound(fileName);
-```
-
-Sounds are loaded automatically on first play. Sound preloading can be forced:
-```javascript
-audioManager.createSound(fileName).load();
-```
-
-Playing sound in a channel.
-```javascript
-audioManager.playSound('ui', fileName);
+var fileName = 'laser1';
+audioManager.createSound(fileName)
+audioManager.playSound('sfx', fileName);
 
 // volume and panoramic can be set optionally
 var volume    = 0.7; // volume is a float in range ]0..1]
 var panoramic = 0.9; // panoramic is a float in range [-1..1], 0 is the center
-audioManager.playSound('ui', fileName, volume, panoramic);
+audioManager.playSound('sfx', fileName, volume, panoramic);
 ```
 
-Only available with webAudio, the pitch can also optionally be set.
+Sounds creation and preloading can be forced.
 ```javascript
-var pitch = -7.0; // in semi-tone
-audioManager.playSound('ui', fileName, volume, panoramic, pitch);
+audioManager.createSound(fileName).load();
 ```
 
-Playing sounds in channels will ensure volume and mute on this channel will be used when playing that sound.
-Alternatively, sounds can be managed outside of channels.
+Alternatively, sounds can be played outside channels.
 ```javascript
 var sound = audioManager.createSound(fileName);
 sound.play(volume, panoramic, pitch); // all parameters are optional.
+```
+### Change pitch
+This feature is only available with WebAudio.
+
+```javascript
+var pitch = -7.0; // in semi-tone
+sound.setPitch(pitch);
+```
+
+The pitch can be set at play.
+```javascript
+audioManager.playSound('ui', fileName, volume, panoramic, pitch);
+```
+
+While a sound is playing, the pitch can be changed dynamically
+```javascript
+var portamento = 3.0;
+sound.setPitch(pitch, portamento);
 ```
 
 ### Create and play sound groups.
 A sound group is a collection of sounds that will play alternatively in a round-robin pattern on each `play` call.
 ```javascript
 var soundGroupDefs = {
-	groupId1: { id: ['sound1', 'sound2'], vol: [1.0, 0.8] },
+	groupId1: { id: ['sound1', 'sound2'], vol: [1.0, 0.8], pitch: [0.0] },
 	groupId2: { ... },
 	...
 };
@@ -82,7 +89,8 @@ var pitch     = 3.0; // in semi-tone
 audioManager.playSoundGroup('sfx', 'groupId1', volume, panoramic, pitch);
 ```
 
-### Play and stop looped sounds (e.g. background music). Only one loop can play per channel.
+### Play and stop looped sounds
+For example background musics. Only one loop can play per channel.
 ```javascript
 var volume   = 1.0; // volume is a float in range ]0..1]
 var fileName = 'bgm1';
