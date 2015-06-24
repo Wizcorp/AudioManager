@@ -273,7 +273,7 @@ AudioManager.prototype.playLoopSound = function (channelId, id, volume) {
 				channel.sound = null;
 				return;
 			}
-			sound.setLoop(true); // TODO: loop can be a number (set in game global options)
+			sound.setLoop(true); // TODO: loop could be a number (set in game global options)
 			sound.fade = defaultFade;
 			sound.play(channel.volume * volume, 0); // TODO: use streaming for music
 			channel.sound = sound;

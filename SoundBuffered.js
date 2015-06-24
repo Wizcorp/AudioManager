@@ -245,6 +245,11 @@ SoundBuffered.prototype.stop = function (cb) {
 	this.playing = false;
 	if (!this.source) { return cb && cb(); }
 
+	if (this._fadeTimeout) {
+		window.clearTimeout(this._fadeTimeout);
+		this._fadeTimeout = null;
+	}
+
 	var self = this;
 	function stopSound() {
 		self.source.onended = null;
