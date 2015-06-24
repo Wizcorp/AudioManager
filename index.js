@@ -1,5 +1,5 @@
 var AudioContext = window.AudioContext || window.webkitAudioContext;
-var OrderedList  = require('OrderedList');
+var OrderedList  = require('./OrderedList');
 var SoundObject  = require('./SoundBuffered.js');
 var SoundGroup   = require('./SoundGroup.js');
 
