@@ -385,7 +385,7 @@ AudioManager.prototype.playSound = function (channelId, soundId, volume, pan, pi
 	var channel = this.channels[channelId];
 	if (channel.muted) { return; }
 	var sound = this.getSound(soundId);
-	if (!sound) { return; }
+	if (!sound) { sound = this.createSound(soundId); }
 	volume = volume || 1.0;
 	sound.play(channel.volume * volume, pan, pitch);
 };
@@ -402,7 +402,7 @@ AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, volum
 	var channel = this.channels[channelId];
 	if (channel.muted) { return; }
 	var soundGroup = this.getSoundGroup(soundGroupId);
-	if (!soundGroup) { return; }
+	if (!soundGroup) { return console.warn('SoundGroup "' + soundGroupId + '" does not exist.'); }
 	volume = volume || 1.0;
 	soundGroup.play(volume * channel.volume, pan, pitch);
 };

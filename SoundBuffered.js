@@ -174,8 +174,15 @@ SoundBuffered.prototype._load = function (filePath) {
 /** Unload sound from memory */
 SoundBuffered.prototype.unload = function () {
 	if (ISound.prototype.unload.call(this)) {
+		if (this._fadeTimeout) {
+			window.clearTimeout(this._fadeTimeout);
+			this._fadeTimeout = null;
+		}
 		this.buffer = null;
 		this.gain.setTargetAtTime(0, this.audioContext.currentTime, 0);
+		this.source.onended = null;
+		this.source.stop(0);
+		this.source = null;
 	}
 };
 

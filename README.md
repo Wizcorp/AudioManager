@@ -1,5 +1,7 @@
 # AudioManager
-play sounds using Web Audio, fallback on HTML5 Audio
+Play sounds using Web Audio, fallback on HTML5 Audio.
+`AudioManager` is specifically designed to works for games that have a big
+quantity of audio assets. Loading and unloading is made easy and transparent.
 
 # Documentation
 
@@ -34,9 +36,9 @@ audioManager.setVolume('ui', volume);
 
 ### Create and play a simple sound.
 Create a sound and playing it in a channel.
+Sound is created and loaded automatically.
 ```javascript
 var fileName = 'laser1';
-audioManager.createSound(fileName)
 audioManager.playSound('sfx', fileName);
 
 // volume and panoramic can be set optionally

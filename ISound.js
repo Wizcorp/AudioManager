@@ -119,7 +119,8 @@ ISound.prototype._finalizeLoad = function (error) {
 ISound.prototype.unload = function () {
 	this._playTriggered = 0;
 	this.setLoop(false);
-	this.fade = 0;
+	this.fade  = 0;
+	this.pitch = 0;
 	this.stop();
 
 	if (this._loading) {
