@@ -147,8 +147,8 @@ ISound.prototype.unload = function () {
  * @param {number} [pitch] - optional pitch value in semi-tone (available only if using webAudio)
  */
 ISound.prototype.play = function (vol, pan, pitch) {
-	if (vol !== undefined) { this.setVolume(vol); }
-	if (pan !== undefined) { this.setPan(pan); }
+	if (vol !== undefined && vol !== null) { this.setVolume(vol); }
+	if (pan !== undefined && pan !== null) { this.setPan(pan); }
 
 	if (!this._loaded) {
 		this._playTriggered = Date.now();

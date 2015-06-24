@@ -1,7 +1,7 @@
 # AudioManager
 play sounds using Web Audio, fallback on HTML5 Audio
 
-## Documentation
+# Documentation
 
 ### Create audioManager object and channels
 Pass the list of channels to the constructor as an array of strings.
@@ -16,7 +16,8 @@ audioManager.settings.audioPath = 'assets/audio/';
 ```
 
 ### Start audio engine.
-To work correctly on iOS, this must be called on an user interaction (e.g. user pressing a button)
+To work correctly on iOS, this must be called on an user interaction
+(e.g. user pressing a button)
 ```javascript
 gameStartButton.on('tap', function () {
 	audioManager.init();
@@ -74,7 +75,8 @@ sound.setPitch(pitch, portamento);
 ```
 
 ### Create and play sound groups.
-A sound group is a collection of sounds that will play alternatively in a round-robin pattern on each `play` call.
+A sound group is a collection of sounds that will play alternatively in a 
+round-robin pattern on each `play` call.
 ```javascript
 var soundGroupDefs = {
 	groupId1: { id: ['sound1', 'sound2'], vol: [1.0, 0.8], pitch: [0.0] },
@@ -90,7 +92,8 @@ audioManager.playSoundGroup('sfx', 'groupId1', volume, panoramic, pitch);
 ```
 
 ### Play and stop looped sounds
-For example background musics. Only one loop can play per channel.
+Only one loop can play per channel. Playing a new looped sound in the same
+channel will stop current playing sound before starting new one.
 ```javascript
 var volume   = 1.0; // volume is a float in range ]0..1]
 var fileName = 'bgm1';

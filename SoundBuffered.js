@@ -76,7 +76,7 @@ SoundBuffered.prototype.init = function () {
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 SoundBuffered.prototype.setVolume = function (value) {
 	this.volume = value;
-	if (!this.playing) { return; }
+	if (!this.playing) return;
 	this.gain.setTargetAtTime(value, this.audioContext.currentTime, this.fade);
 };
 
@@ -110,11 +110,17 @@ SoundBuffered.prototype.setLoop = function (value) {
  */
 SoundBuffered.prototype.setPitch = function (pitch, portamento) {
 	this.pitch = pitch;
-	if (!this.source) { return; }
+	this._setPlaybackRate(pitch, portamento);
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+SoundBuffered.prototype._setPlaybackRate = function (pitch, portamento) {
+	if (!this.source) return;
 	var rate = Math.pow(2, (this._playPitch + pitch) / 12);
 	portamento = portamento || 0;
 	this.source.playbackRate.setTargetAtTime(rate, this.audioContext.currentTime, portamento);
 };
+
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Load sound
@@ -183,6 +189,18 @@ SoundBuffered.prototype._play = function (pitch) {
 		return;
 	}
 
+	// prevent a looped sound to play twice
+	if (this.loop && this.playing) {
+		// TODO: restart sound from beginning
+		// update pitch if needed
+		if ((pitch || pitch === 0) && pitch !== this._playPitch) {
+			this._playPitch = pitch;
+			this._setPlaybackRate(this.pitch + this._playPitch, 0);
+		}
+		return;
+	}
+
+	// if sound is still in fade out, 
 	if (this._fadeTimeout) {
 		this.source.onended = null;
 		this.source.stop(0);
@@ -193,7 +211,7 @@ SoundBuffered.prototype._play = function (pitch) {
 	this.playing = true;
 	this.gain.setTargetAtTime(this.volume, this.audioContext.currentTime, this.fade);
 
-	var sourceNode = this.audioContext.createBufferSource();
+	var sourceNode = this.source = this.audioContext.createBufferSource();
 	sourceNode.connect(this.sourceConnector);
 
 	var self = this;
@@ -205,12 +223,10 @@ SoundBuffered.prototype._play = function (pitch) {
 
 	this._playPitch = pitch || 0;
 	if (pitch || this.pitch) {
-		var rate = Math.pow(2, (this.pitch + this._playPitch) / 12);
-		sourceNode.playbackRate.setTargetAtTime(rate, this.audioContext.currentTime, 0);
+		this._setPlaybackRate(this.pitch + this._playPitch, 0);
 	}
 
 	sourceNode.loop      = this.loop;
-	this.source          = sourceNode;
 	sourceNode.buffer    = this.buffer;
 	sourceNode.loopStart = 0;
 	sourceNode.loopEnd   = this.buffer.duration;
