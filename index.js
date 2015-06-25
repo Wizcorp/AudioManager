@@ -254,19 +254,35 @@ AudioManager.prototype.playLoopSound = function (channelId, id, volume) {
 	var defaultFade = this.settings.defaultFade;
 	var channel = this.channels[channelId];
 	var currentSoundId = channel.sound && channel.soundParam && channel.soundParam.id;
+
+	volume = Math.max(0, Math.min(1, volume || 1));
+	channel.soundParam = { id: id, vol: volume };
+
 	if (id === currentSoundId) { return; }
 	if (channel.muted) { return; }
-	var self = this;
+
 	var currentSound = channel.sound;
-	volume = Math.max(0, Math.min(1, volume || 1));
+	var self = this;
+
+	// check if new sound is still fading out
+	var sound = this.getSound(id);
+	if (sound && (sound.fadingOut || sound.playing)) {
+		sound.cancelStop();
+		if (currentSound) {
+			currentSound.cancelStop();
+			currentSound.stop(function onSoundStop() {
+				self.freeSound(currentSound);
+			});
+		}
+		channel.sound = sound;
+		return;
+	}
 
 	this.loadSound(id, function onSoundLoad(error, sound) {
 		if (error) {
 			// FIXME: should we stop current sound ?
 			return console.error(error);
 		}
-
-		channel.soundParam = { id: id, vol: volume };
 
 		function startLoop() {
 			if (!sound) {

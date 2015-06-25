@@ -2,6 +2,7 @@
 Play sounds using Web Audio, fallback on HTML5 Audio.
 `AudioManager` is specifically designed to works for games that have a big
 quantity of audio assets. Loading and unloading is made easy and transparent.
+If available, WizAsset is used for downloading files to disc.
 
 # Documentation
 

@@ -10,6 +10,7 @@ function ISound() {
 	this.fade            = 0;
 	this.usedMemory      = 0;
 	this.poolRef         = null;
+	this.fadingOut       = false;
 
 	// the following properties are public but should NOT be assigned directly.
 	// instead, use the setter functions: setId, setVolume, setPan, setLoop, setPitch.
@@ -173,4 +174,9 @@ ISound.prototype._play = function () {
  */
 ISound.prototype.stop = function (cb) {
 	return cb && cb();
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+ISound.prototype.cancelStop = function () {
+	// virtual function
 };
