@@ -14,10 +14,12 @@ if (!AudioContext) {
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 function AudioChannel() {
-	this.volume     = 0.5;
-	this.muted      = true;
-	this.sound      = null;
-	this.soundParam = null;
+	this.volume    = 1.0;
+	this.muted     = true;
+	this.loopSound = null;
+	this.loopId    = null;
+	this.loopVol   = 0.0;
+	this.nextLoop  = null;
 }
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -112,20 +114,20 @@ AudioManager.prototype.setVolume = function (channelId, volume, muted) {
 	channel.muted  = volume === 0 || muted || false;
 	channel.volume = volume;
 
-	if (!channel.soundParam) { return; }
+	if (!channel.loopId) { return; }
 
 	// this is a channel with looped sound (music, ambient sfx)
 	// we have to take care of this looped sound playback if channel state changed
-	if (channel.sound && channel.muted) {
+	if (channel.loopSound && channel.muted) {
 		// a sound was playing, channel becomes muted
-		channel.sound.stop();
-	} else if (channel.sound) {
+		channel.loopSound.stop();
+	} else if (channel.loopSound) {
 		// a sound is loaded in channel, updating volume & playback
-		channel.sound.setVolume(Math.max(0, Math.min(1, volume * channel.soundParam.volume)));
-		if (wasChannelMuted) { channel.sound.play(); }
+		channel.loopSound.setVolume(Math.max(0, Math.min(1, volume * channel.loopVol)));
+		if (wasChannelMuted) { channel.loopSound.play(); }
 	} else if (!channel.muted) {
 		// no sounds are loaded in channel, channel is unmutted
-		this.playLoopSound(channelId, channel.soundParam);
+		this.playLoopSound(channelId, channel.loopId, channel.loopVol);
 	}
 };
 
@@ -251,61 +253,39 @@ AudioManager.prototype.freeSound = function (sound) {
  * @param {number} [volume]  - sound volume, a integer in rage ]0..1]
  */
 AudioManager.prototype.playLoopSound = function (channelId, id, volume) {
+	var self = this;
 	var defaultFade = this.settings.defaultFade;
+
 	var channel = this.channels[channelId];
-	var currentSoundId = channel.sound && channel.soundParam && channel.soundParam.id;
+	var currentSoundId = channel.loopId;
 
 	volume = Math.max(0, Math.min(1, volume || 1));
-	channel.soundParam = { id: id, vol: volume };
+	channel.loopId  = id;
+	channel.loopVol = volume;
 
-	if (id === currentSoundId) { return; }
+	if (id === currentSoundId) { return; } // TODO: update volume
 	if (channel.muted) { return; }
 
-	var currentSound = channel.sound;
-	var self = this;
-
-	// check if new sound is still fading out
-	var sound = this.getSound(id);
-	if (sound && (sound.fadingOut || sound.playing)) {
-		sound.cancelStop();
-		if (currentSound) {
-			currentSound.cancelStop();
-			currentSound.stop(function onSoundStop() {
-				self.freeSound(currentSound);
-			});
-		}
-		channel.sound = sound;
-		return;
+	function switchLoop() {
+		var sound = channel.loopSound = channel.nextLoop;
+		channel.nextLoop = null;
+		sound.setLoop(true);
+		sound.fade = defaultFade;
+		sound.play();
 	}
 
-	this.loadSound(id, function onSoundLoad(error, sound) {
-		if (error) {
-			// FIXME: should we stop current sound ?
-			return console.error(error);
-		}
+	function stopCurrentLoop() {
+		if (!channel.loopSound) return switchLoop();
+		channel.loopSound.stop(function onStop() {
+			switchLoop();
+		});
+	};
 
-		function startLoop() {
-			if (!sound) {
-				channel.sound = null;
-				return;
-			}
-			sound.setLoop(true); // TODO: loop could be a number (set in game global options)
-			sound.fade = defaultFade;
-			sound.play(channel.volume * volume, 0); // TODO: use streaming for music
-			channel.sound = sound;
-		}
-
-		if (currentSound) {
-			// TODO: fade-out current music
-			currentSound.stop(function onSoundStop() {
-				self.freeSound(currentSound);
-				startLoop();
-			});
-		} else {
-			startLoop();
-		}
-	});
+	if (channel.nextLoop) this.freeSound(channel.nextLoop);
+	channel.nextLoop = this.loadSound(id, stopCurrentLoop);
 };
+
+
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Stop currently playing lopped sound in channel */
@@ -313,11 +293,13 @@ AudioManager.prototype.stopLoopSound = function (channelId) {
 	var self = this;
 	var channel = this.channels[channelId];
 	if (!channel) return console.warn('Channel id "' + channelId + '" does not exist.');
-	var currentSound = channel.sound;
+	var currentSound = channel.loopSound;
+	channel.loopId  = id;
+	channel.loopVol = volume;
 	if (!currentSound) return;
 	currentSound.stop(function onSoundStop() {
 		self.freeSound(currentSound);
-		channel.sound = null;
+		channel.loopSound = null;
 	});
 };
 
@@ -325,10 +307,7 @@ AudioManager.prototype.stopLoopSound = function (channelId) {
 /** Stop and cleanup all looped sounds */
 AudioManager.prototype.stopAllLoopSounds = function () {
 	for (var id in this.channels) {
-		var channel = this.channels[id];
-		if (channel.sound) { channel.sound.stop(); }
-		channel.sound      = null;
-		channel.soundParam = null;
+		this.stopLoopSound(id);
 	}
 };
 
@@ -346,8 +325,8 @@ AudioManager.prototype.release = function () {
 	var loopedSounds = {};
 	for (id in this.channels) {
 		var channel = this.channels[id];
-		if (channel.sound) {
-			loopedSounds[channel.sound.id] = true;
+		if (channel.loopSound) {
+			loopedSounds[channel.loopSound.id] = true;
 		}
 	}
 

@@ -19,7 +19,7 @@ function SoundBuffered() {
 
 	this._playPitch      = 0.0;
 	this._fadeTimeout    = null;
-	this._onSoundStopCbs = [];
+	this._onStopCallback = null;
 
 	if (this.audioContext) { this.init(); }
 }
@@ -176,8 +176,8 @@ SoundBuffered.prototype._load = function (filePath) {
 SoundBuffered.prototype.unload = function () {
 	if (ISound.prototype.unload.call(this)) {
 		if (this._fadeTimeout) {
-			window.clearTimeout(this._fadeTimeout);
-			this._fadeTimeout = null;
+			this._onStopCallback = null;
+			this._stopAndClear();
 		}
 		this.buffer = null;
 		this.gain.setTargetAtTime(0, this.audioContext.currentTime, 0);
@@ -211,7 +211,10 @@ SoundBuffered.prototype._play = function (pitch) {
 	}
 
 	// if sound is still fading out, we stop and clear it before restarting it
-	if (this._fadeTimeout) this._stopAndClear();
+	if (this._fadeTimeout) {
+		this._onStopCallback = null;
+		this._stopAndClear();
+	}
 
 	this.playing = true;
 	this.gain.setTargetAtTime(this.volume, this.audioContext.currentTime, this.fade);
@@ -240,7 +243,6 @@ SoundBuffered.prototype._play = function (pitch) {
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 SoundBuffered.prototype._stopAndClear = function () {
-	this.fadingOut = false;
 	this.source.onended = null;
 	this.source.stop(0);
 	this.source = null;
@@ -248,23 +250,9 @@ SoundBuffered.prototype._stopAndClear = function () {
 		window.clearTimeout(this._fadeTimeout);
 		this._fadeTimeout = null;
 	}
-	var cbs = this._onSoundStopCbs;
-	for (var i = 0; i < cbs.length; i++) {
-		cbs[i]();
-	}
-};
-
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-SoundBuffered.prototype.cancelStop = function () {
-	var fadeOutRatio = this.audioManager.settings.fadeOutRatio;
-	this._onSoundStopCbs = [];
-	if (this._fadeTimeout) {
-		// sound is still fading out and not stopped
-		window.clearTimeout(this._fadeTimeout);
-		this._fadeTimeout = null;
-		this.playing = true;
-		// fade in back to original volume
-		this.gain.setTargetAtTime(this.volume, this.audioContext.currentTime, this.fade * fadeOutRatio);
+	if (this._onStopCallback) {
+		this._onStopCallback();
+		this._onStopCallback = null;
 	}
 };
 
@@ -280,16 +268,11 @@ SoundBuffered.prototype.stop = function (cb) {
 	this.playing = false;
 	if (!this.source) { return cb && cb(); }
 
-	if (this._fadeTimeout) {
-		window.clearTimeout(this._fadeTimeout);
-		this._fadeTimeout = null;
-	}
+	this._onStopCallback = cb;
 
-	if (cb) this._onSoundStopCbs.push(cb);
+	if (this._fadeTimeout) return;
 
 	if (this.fade) {
-		this.fadingOut = true;
-		if (this._fadeTimeout) return; // sound is already fading out
 		var self = this;
 		this.gain.setTargetAtTime(0, this.audioContext.currentTime, this.fade * fadeOutRatio);
 		this._fadeTimeout = window.setTimeout(function onFadeEnd() {
