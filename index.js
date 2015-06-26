@@ -280,7 +280,7 @@ AudioManager.prototype.playLoopSound = function (channelId, id, volume) {
 		channel.loopSound.stop(function onStop() {
 			switchLoop();
 		});
-	};
+	}
 
 	if (channel.nextLoop) this.freeSound(channel.nextLoop);
 	channel.nextLoop = this.loadSound(id, stopCurrentLoop);
