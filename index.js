@@ -66,7 +66,7 @@ module.exports = AudioManager;
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 AudioManager.prototype.init = function () {
-	if (this.audioContext || !AudioContext) { return; }
+	if (this.audioContext || !AudioContext) return;
 	this.audioContext = new AudioContext();
 	SoundObject.prototype.audioContext = this.audioContext;
 	
@@ -109,12 +109,12 @@ AudioManager.prototype.setup = function (channels) {
  */
 AudioManager.prototype.setVolume = function (channelId, volume, muted) {
 	var channel = this.channels[channelId];
-	if (!channel) { return; }
+	if (!channel) return;
 	var wasChannelMuted = channel.muted;
 	channel.muted  = volume === 0 || muted || false;
 	channel.volume = volume;
 
-	if (!channel.loopId) { return; }
+	if (!channel.loopId) return;
 
 	// this is a channel with looped sound (music, ambient sfx)
 	// we have to take care of this looped sound playback if channel state changed
@@ -151,7 +151,7 @@ AudioManager.prototype.loadSound = function (id, cb) {
  */
 AudioManager.prototype.createSound = function (id) {
 	var sound = this.getSound(id);
-	if (sound) { return sound; }
+	if (sound) return sound;
 	sound = this.soundsById[id] = this.getEmptySound();
 	sound.setId(id);
 	return sound;
@@ -166,7 +166,7 @@ AudioManager.prototype.createSoundPermanent = function (id) {
 	var sound = this.getSound(id);
 	// TODO: Check if sound is permanent and move it to permanents list if it's not the case.
 	//       Because permanents sound (UI sounds) are created at app startup, this should not happend.
-	if (sound) { return sound; }
+	if (sound) return sound;
 	sound = this.permanentSounds[id] = new SoundObject();
 	sound.setId(id);
 	return sound;
@@ -180,15 +180,15 @@ AudioManager.prototype.createSoundPermanent = function (id) {
 AudioManager.prototype.getSound = function (id) {
 	// search sound in permanents
 	var sound = this.permanentSounds[id];
-	if (sound) { return sound; }
+	if (sound) return sound;
 
 	// search sound in active list
 	sound = this.soundsById[id];
-	if (sound) { return sound; }
+	if (sound) return sound;
 
 	// search sound in archives
 	sound = this.soundArchiveById[id];
-	if (!sound) { return null; }
+	if (!sound) return null;
 
 	// remove sound from archives
 	this.soundArchive.removeByRef(sound.poolRef);
@@ -208,11 +208,11 @@ AudioManager.prototype.getSound = function (id) {
 AudioManager.prototype.getSoundGroup = function (id) {
 	// search soundGroup in active list
 	var soundGroup = this.soundGroupsById[id];
-	if (soundGroup) { return soundGroup; }
+	if (soundGroup) return soundGroup;
 
 	// search soundGroup in archives
 	soundGroup = this.soundGroupArchiveById[id];
-	if (!soundGroup) { return null; }
+	if (!soundGroup) return null;
 
 	// remove soundGroup from archives
 	this.soundGroupArchive.removeByRef(soundGroup.poolRef);
@@ -234,12 +234,12 @@ AudioManager.prototype.getSoundGroup = function (id) {
  * @param {number} sound - sound wrapper object
  */
 AudioManager.prototype.freeSound = function (sound) {
-	var id = sound.id;
-	if (this.soundsById[id]) { delete this.soundsById[id]; }
-	if (this.soundArchiveById[id]) {
+	var soundId = sound.id;
+	if (this.soundsById[soundId]) { delete this.soundsById[soundId]; }
+	if (this.soundArchiveById[soundId]) {
 		this.soundArchive.removeByRef(sound.poolRef);
 		sound.poolRef = null;
-		delete this.soundArchiveById[id];
+		delete this.soundArchiveById[soundId];
 	}
 	sound.unload();
 	this.freeSoundPool.push(sound);
@@ -253,7 +253,7 @@ AudioManager.prototype.freeSound = function (sound) {
  * @param {string} soundId   - sound id
  * @param {number} [volume]  - sound volume, a integer in rage ]0..1]
  */
-AudioManager.prototype.playLoopSound = function (channelId, id, volume) {
+AudioManager.prototype.playLoopSound = function (channelId, soundId, volume) {
 	var defaultFade    = this.settings.defaultFade;
 	var channel        = this.channels[channelId];
 	var currentSoundId = channel.loopId;
@@ -261,11 +261,11 @@ AudioManager.prototype.playLoopSound = function (channelId, id, volume) {
 
 	volume = Math.max(0, Math.min(1, volume || 1));
 
-	channel.loopId  = id;
+	channel.loopId  = soundId;
 	channel.loopVol = volume;
 
-	if (id === currentSoundId && currentSound && currentSound.playing) { return; } // TODO: update volume
-	if (channel.muted) { return; }
+	if (soundId === currentSoundId && currentSound && currentSound.playing) return; // TODO: update volume
+	if (channel.muted) return;
 
 	function switchLoop() {
 		var sound = channel.loopSound = channel.nextLoop;
@@ -283,7 +283,7 @@ AudioManager.prototype.playLoopSound = function (channelId, id, volume) {
 	}
 
 	if (channel.nextLoop) this.freeSound(channel.nextLoop);
-	channel.nextLoop = this.loadSound(id, stopCurrentLoop);
+	channel.nextLoop = this.loadSound(soundId, stopCurrentLoop);
 };
 
 
@@ -295,8 +295,7 @@ AudioManager.prototype.stopLoopSound = function (channelId) {
 	var channel = this.channels[channelId];
 	if (!channel) return console.warn('Channel id "' + channelId + '" does not exist.');
 	var currentSound = channel.loopSound;
-	channel.loopId  = id;
-	channel.loopVol = volume;
+	channel.loopId = null;
 	if (!currentSound) return;
 	currentSound.stop(function onSoundStop() {
 		self.freeSound(currentSound);
@@ -307,8 +306,8 @@ AudioManager.prototype.stopLoopSound = function (channelId) {
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Stop and cleanup all looped sounds */
 AudioManager.prototype.stopAllLoopSounds = function () {
-	for (var id in this.channels) {
-		this.stopLoopSound(id);
+	for (var channelId in this.channels) {
+		this.stopLoopSound(channelId);
 	}
 };
 
@@ -341,7 +340,7 @@ AudioManager.prototype.release = function () {
 
 	// archive all sounds
 	for (id in this.soundsById) {
-		if (loopedSounds[id]) { continue; }
+		if (loopedSounds[id]) continue;
 		sound = this.soundsById[id];
 		sound.poolRef = this.soundArchive.add(sound);
 		this.soundArchiveById[id] = sound;
@@ -352,7 +351,7 @@ AudioManager.prototype.release = function () {
 	var count = this.soundGroupArchive.getCount();
 	while (count > maxSoundGroup) {
 		soundGroup = this.soundGroupArchive.popFirst();
-		if (!soundGroup) { break; }
+		if (!soundGroup) break;
 		soundGroup.poolRef = null;
 		delete this.soundGroupArchiveById[soundGroup.id];
 		count -= 1;
@@ -361,7 +360,7 @@ AudioManager.prototype.release = function () {
 	// free sounds if memory limit is reached
 	while (this.usedMemory > maxUsedMemory) {
 		sound = this.soundArchive.popFirst();
-		if (!sound) { break; }
+		if (!sound) break;
 		sound.poolRef = null;
 		delete this.soundArchiveById[sound.id];
 		this.freeSound(sound);
@@ -379,7 +378,7 @@ AudioManager.prototype.release = function () {
  */
 AudioManager.prototype.playSound = function (channelId, soundId, volume, pan, pitch) {
 	var channel = this.channels[channelId];
-	if (channel.muted) { return; }
+	if (channel.muted) return;
 	var sound = this.getSound(soundId);
 	if (!sound) { sound = this.createSound(soundId); }
 	volume = volume || 1.0;
@@ -396,9 +395,9 @@ AudioManager.prototype.playSound = function (channelId, soundId, volume, pan, pi
  */
 AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, volume, pan, pitch) {
 	var channel = this.channels[channelId];
-	if (channel.muted) { return; }
+	if (channel.muted) return;
 	var soundGroup = this.getSoundGroup(soundGroupId);
-	if (!soundGroup) { return console.warn('SoundGroup "' + soundGroupId + '" does not exist.'); }
+	if (!soundGroup) return console.warn('SoundGroup "' + soundGroupId + '" does not exist.');
 	volume = volume || 1.0;
 	soundGroup.play(volume * channel.volume, pan, pitch);
 };
@@ -416,7 +415,7 @@ AudioManager.prototype.createSoundGroups = function (soundGroupDefs, channelId) 
 	var muted = channelId !== undefined ? this.channels[channelId].muted : false;
 	for (var soundGroupId in soundGroupDefs) {
 		var def = soundGroupDefs[soundGroupId];
-		if (this.soundGroupsById[soundGroupId]) { continue; }
+		if (this.soundGroupsById[soundGroupId]) continue;
 		var soundGroup = this.getSoundGroup(soundGroupId);
 		if (!soundGroup) {
 			soundGroup = new SoundGroup(soundGroupId, def.id, def.vol, def.pitch, muted);

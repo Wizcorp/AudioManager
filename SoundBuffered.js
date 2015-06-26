@@ -20,13 +20,14 @@ function SoundBuffered() {
 	this._fadeTimeout    = null;
 	this._onStopCallback = null;
 
-	if (this.audioContext) { this.init(); }
+	if (this.audioContext) this.init();
 }
 inherits(SoundBuffered, ISound);
 module.exports = SoundBuffered;
 
 
 SoundBuffered.prototype.init = function () {
+	var maxPlayLatency = this.audioManager.settings.maxPlayLatency;
 	var self = this;
 
 	// create webAudio nodes
@@ -148,7 +149,7 @@ SoundBuffered.prototype._load = function (filePath) {
 		xobj.responseType = 'arraybuffer';
 
 		xobj.onreadystatechange = function onXhrStateChange() {
-			if (~~xobj.readyState !== 4) { return; }
+			if (~~xobj.readyState !== 4) return;
 			if (~~xobj.status !== 200 && ~~xobj.status !== 0) {
 				return loadFail();
 			}
@@ -262,10 +263,10 @@ SoundBuffered.prototype._stopAndClear = function () {
  */
 SoundBuffered.prototype.stop = function (cb) {
 	var fadeOutRatio = this.audioManager.settings.fadeOutRatio;
-	if (!this.playing) { return cb && cb(); }
+	if (!this.playing) return cb && cb();
 	this._playTriggered = 0;
 	this.playing = false;
-	if (!this.source) { return cb && cb(); }
+	if (!this.source) return cb && cb();
 
 	this._onStopCallback = cb;
 

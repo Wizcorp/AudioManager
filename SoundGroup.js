@@ -26,8 +26,8 @@ function SoundGroup(id, soundIds, volumes, pitches, muted) {
 		}
 	}
 
-	if (this.volumes.length === 0) { this.volumes.push(1.0); }
-	if (this.pitches.length === 0) { this.pitches.push(0.0); }
+	if (this.volumes.length === 0) this.volumes.push(1.0);
+	if (this.pitches.length === 0) this.pitches.push(0.0);
 }
 module.exports = SoundGroup;
 
@@ -39,10 +39,10 @@ module.exports = SoundGroup;
  * @param {number} [pitch]  - optional pitch value in semi-tone (available only if using webAudio)
  */
 SoundGroup.prototype.play = function (volume, pan, pitch) {
-	if (this.soundIds.length === 0) { return; }
+	if (this.soundIds.length === 0) return;
 	var soundId = this.soundIds[this.soundIndex++];
 	var sound = this.audioManager.getSound(soundId);
-	if (!sound) { return console.warn('[Sound Group: ' + this.id + '] sound id ' + soundId + '  cannot be played.'); }
+	if (!sound) return console.warn('[Sound Group: ' + this.id + '] sound id ' + soundId + '  cannot be played.');
 	volume = volume || 1.0;
 	pitch  = pitch  || 0.0;
 	volume *= this.volumes[this.volIndex++];

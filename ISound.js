@@ -77,11 +77,11 @@ ISound.prototype._load = function (filePath) {
  * @param {Function} [cd] - optional callback function
  */
 ISound.prototype.load = function (cb) {
-	if (!this.id) { return cb && cb('noId'); }
-	if (this._loaded) { return cb && cb(null, this); }
+	if (!this.id) return cb && cb('noId');
+	if (this._loaded) return cb && cb(null, this);
 
 	if (cb) { this._queuedCallback.push(cb); }
-	if (this._loading) { return; }
+	if (this._loading) return;
 	this._loading = true;
 
 	return this._load(this._src, this);
