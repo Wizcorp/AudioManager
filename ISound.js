@@ -7,6 +7,7 @@
  */
 function ISound() {
 	// public properties
+	this.playing         = false;
 	this.fade            = 0;
 	this.usedMemory      = 0;
 	this.poolRef         = null;
@@ -163,6 +164,7 @@ ISound.prototype.play = function (vol, pan, pitch) {
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Play sound. Abstract method to be overwritten */
 ISound.prototype._play = function () {
+	this.playing = true;
 	console.log('ISound play call: "' + this._src + '"');
 };
 
@@ -172,5 +174,6 @@ ISound.prototype._play = function () {
  * @param {Function} [cb] - optional callback function (use it when sound has a fade out)
  */
 ISound.prototype.stop = function (cb) {
+	this.playing = false;
 	return cb && cb();
 };

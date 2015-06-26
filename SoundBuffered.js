@@ -9,7 +9,6 @@ var ISound   = require('./ISound.js');
 function SoundBuffered() {
 	ISound.call(this);
 
-	this.playing         = false;
 	this.buffer          = null;
 	this.source          = null;
 	this.sourceConnector = null;

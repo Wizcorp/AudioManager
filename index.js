@@ -253,17 +253,17 @@ AudioManager.prototype.freeSound = function (sound) {
  * @param {number} [volume]  - sound volume, a integer in rage ]0..1]
  */
 AudioManager.prototype.playLoopSound = function (channelId, id, volume) {
-	var self = this;
-	var defaultFade = this.settings.defaultFade;
-
-	var channel = this.channels[channelId];
+	var defaultFade    = this.settings.defaultFade;
+	var channel        = this.channels[channelId];
 	var currentSoundId = channel.loopId;
+	var currentSound   = channel.loopSound;
 
 	volume = Math.max(0, Math.min(1, volume || 1));
+
 	channel.loopId  = id;
 	channel.loopVol = volume;
 
-	if (id === currentSoundId) { return; } // TODO: update volume
+	if (id === currentSoundId && currentSound && currentSound.playing) { return; } // TODO: update volume
 	if (channel.muted) { return; }
 
 	function switchLoop() {
