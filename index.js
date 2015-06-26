@@ -128,7 +128,7 @@ AudioManager.prototype.setVolume = function (channelId, volume, muted) {
 		if (wasChannelMuted) { channel.loopSound.play(); }
 	} else if (!channel.muted) {
 		// no sounds are loaded in channel, channel is unmutted
-		this.playLoopSound(channelId, channel.loopId, channel.loopVol);
+		this.playLoopSound(channelId, channel.loopId, volume * channel.loopVol);
 	}
 };
 
@@ -136,7 +136,7 @@ AudioManager.prototype.setVolume = function (channelId, volume, muted) {
 /** Create and load sound
  *
  * @param {number}   id   - sound id
- * @param {Function} [cb] - optionnal callback function called when sound has finished to load
+ * @param {Function} [cb] - optional callback function called when sound has finished to load
  */
 AudioManager.prototype.loadSound = function (id, cb) {
 	var sound = this.createSound(id);
@@ -251,9 +251,11 @@ AudioManager.prototype.freeSound = function (sound) {
  *
  * @param {string} channelId - channel id.
  * @param {string} soundId   - sound id
- * @param {number} [volume]  - sound volume, a integer in rage ]0..1]
+ * @param {number} [volume]  - optional volume, a integer in range ]0..1]
+ * @param {number} [pan]     - optional panoramic, a integer in rage [-1..1]
+ * @param {number} [pitch]   - optional pitch, in semi-tone
  */
-AudioManager.prototype.playLoopSound = function (channelId, soundId, volume) {
+AudioManager.prototype.playLoopSound = function (channelId, soundId, volume, pan, pitch) {
 	var defaultFade    = this.settings.defaultFade;
 	var channel        = this.channels[channelId];
 	var currentSoundId = channel.loopId;
@@ -272,7 +274,7 @@ AudioManager.prototype.playLoopSound = function (channelId, soundId, volume) {
 		channel.nextLoop = null;
 		sound.setLoop(true);
 		sound.fade = defaultFade;
-		sound.play();
+		sound.play(volume * channel.volume, pan, pitch);
 	}
 
 	function stopCurrentLoop() {
