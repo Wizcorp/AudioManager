@@ -121,6 +121,7 @@ AudioManager.prototype.setVolume = function (channelId, volume, muted) {
 	if (channel.loopSound && channel.muted) {
 		// a sound was playing, channel becomes muted
 		channel.loopSound.stop();
+		// TODO: unload sound ?
 	} else if (channel.loopSound) {
 		// a sound is loaded in channel, updating volume & playback
 		channel.loopSound.setVolume(Math.max(0, Math.min(1, volume * channel.loopVol)));

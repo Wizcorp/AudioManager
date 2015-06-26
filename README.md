@@ -4,6 +4,30 @@ Play sounds using Web Audio, fallback on HTML5 Audio.
 quantity of audio assets. Loading and unloading is made easy and transparent.
 If available, WizAsset is used for downloading files to disc.
 
+# API
+
+```javascript
+// initialisation
+var audioManager = new AudioManager(channelIds);
+audioManager.init();
+audioManager.setVolume(channelId, volume);
+
+// play simple sound
+audioManager.playSound(channelId, soundId, volume, panoramic, pitch);
+
+// sound group
+audioManager.createSoundGroups(soundGroupDefs, channelId);
+audioManager.playSoundGroup(channelId, groupId, volume, panoramic, pitch);
+
+// loop
+audioManager.playLoopSound(channelId, soundId, volume);
+audioManager.stopLoopSound(channelId);
+audioManager.stopAllLoopSounds();
+
+// release memory
+audioManager.release();
+```
+
 # Documentation
 
 ### Create audioManager object and channels
