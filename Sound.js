@@ -1,4 +1,3 @@
-// jscs:disable requireCurlyBraces
 var inherits     = require('util').inherits;
 var ISound       = require('./ISound.js');
 var PLAY_OPTIONS = { playAudioWhenScreenIsLocked: false };
@@ -101,6 +100,7 @@ Sound.prototype._play = function () {
 	this._audio.pause();
 	this._audio.currentTime = 0;
 	this._audio.play(PLAY_OPTIONS);
+	this.playing = true;
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -112,5 +112,6 @@ Sound.prototype.stop = function (cb) {
 	this._audio.pause();
 	this._audio.currentTime = 0;
 	this._playTriggered = 0;
+	this.playing = false;
 	return cb && cb(); // TODO: fade-out
 };

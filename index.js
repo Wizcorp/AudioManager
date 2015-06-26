@@ -1,4 +1,3 @@
-// jscs:disable requireCurlyBraces
 var AudioContext = window.AudioContext || window.webkitAudioContext;
 var OrderedList  = require('./OrderedList');
 var SoundObject  = require('./SoundBuffered.js');
@@ -13,14 +12,14 @@ if (!AudioContext) {
 	}
 }
 
-var audioContext = null;
-
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 function AudioChannel() {
-	this.volume     = 0.5;
-	this.muted      = true;
-	this.sound      = null;
-	this.soundParam = null;
+	this.volume    = 1.0;
+	this.muted     = true;
+	this.loopSound = null;
+	this.loopId    = null;
+	this.loopVol   = 0.0;
+	this.nextLoop  = null;
 }
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -40,6 +39,7 @@ function AudioManager(channels) {
 	this.soundGroupArchiveById = {};
 	this.usedMemory            = 0;
 	this.channels              = {};
+	this.audioContext          = null;
 
 	// settings
 	this.settings = {
@@ -55,6 +55,10 @@ function AudioManager(channels) {
 	for (var i = 0; i < channels.length; i++) {
 		this.channels[channels[i]] = new AudioChannel();
 	}
+
+	// register self
+	SoundObject.prototype.audioManager = this;
+	SoundGroup.prototype.audioManager  = this;
 }
 
 module.exports = AudioManager;
@@ -62,11 +66,10 @@ module.exports = AudioManager;
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 AudioManager.prototype.init = function () {
-	if (audioContext || !AudioContext) { return; }
-	audioContext = new AudioContext();
-	SoundObject.prototype.audioContext = audioContext;
-	SoundObject.prototype.audioManager = this;
-	SoundGroup.prototype.audioManager  = this;
+	if (this.audioContext || !AudioContext) return;
+	this.audioContext = new AudioContext();
+	SoundObject.prototype.audioContext = this.audioContext;
+	
 	for (var id in this.soundsById) {
 		this.soundsById[id].init();
 	}
@@ -106,25 +109,26 @@ AudioManager.prototype.setup = function (channels) {
  */
 AudioManager.prototype.setVolume = function (channelId, volume, muted) {
 	var channel = this.channels[channelId];
-	if (!channel) { return; }
+	if (!channel) return;
 	var wasChannelMuted = channel.muted;
 	channel.muted  = volume === 0 || muted || false;
 	channel.volume = volume;
 
-	if (!channel.soundParam) { return; }
+	if (!channel.loopId) return;
 
 	// this is a channel with looped sound (music, ambient sfx)
 	// we have to take care of this looped sound playback if channel state changed
-	if (channel.sound && channel.muted) {
+	if (channel.loopSound && channel.muted) {
 		// a sound was playing, channel becomes muted
-		channel.sound.stop();
-	} else if (channel.sound) {
+		channel.loopSound.stop();
+		// TODO: unload sound ?
+	} else if (channel.loopSound) {
 		// a sound is loaded in channel, updating volume & playback
-		channel.sound.setVolume(Math.max(0, Math.min(1, volume * channel.soundParam.volume)));
-		if (wasChannelMuted) { channel.sound.play(); }
+		channel.loopSound.setVolume(Math.max(0, Math.min(1, volume * channel.loopVol)));
+		if (wasChannelMuted) { channel.loopSound.play(); }
 	} else if (!channel.muted) {
 		// no sounds are loaded in channel, channel is unmutted
-		this.playLoopSound(channelId, channel.soundParam);
+		this.playLoopSound(channelId, channel.loopId, channel.loopVol);
 	}
 };
 
@@ -147,7 +151,7 @@ AudioManager.prototype.loadSound = function (id, cb) {
  */
 AudioManager.prototype.createSound = function (id) {
 	var sound = this.getSound(id);
-	if (sound) { return sound; }
+	if (sound) return sound;
 	sound = this.soundsById[id] = this.getEmptySound();
 	sound.setId(id);
 	return sound;
@@ -162,7 +166,7 @@ AudioManager.prototype.createSoundPermanent = function (id) {
 	var sound = this.getSound(id);
 	// TODO: Check if sound is permanent and move it to permanents list if it's not the case.
 	//       Because permanents sound (UI sounds) are created at app startup, this should not happend.
-	if (sound) { return sound; }
+	if (sound) return sound;
 	sound = this.permanentSounds[id] = new SoundObject();
 	sound.setId(id);
 	return sound;
@@ -176,15 +180,15 @@ AudioManager.prototype.createSoundPermanent = function (id) {
 AudioManager.prototype.getSound = function (id) {
 	// search sound in permanents
 	var sound = this.permanentSounds[id];
-	if (sound) { return sound; }
+	if (sound) return sound;
 
 	// search sound in active list
 	sound = this.soundsById[id];
-	if (sound) { return sound; }
+	if (sound) return sound;
 
 	// search sound in archives
 	sound = this.soundArchiveById[id];
-	if (!sound) { return null; }
+	if (!sound) return null;
 
 	// remove sound from archives
 	this.soundArchive.removeByRef(sound.poolRef);
@@ -204,11 +208,11 @@ AudioManager.prototype.getSound = function (id) {
 AudioManager.prototype.getSoundGroup = function (id) {
 	// search soundGroup in active list
 	var soundGroup = this.soundGroupsById[id];
-	if (soundGroup) { return soundGroup; }
+	if (soundGroup) return soundGroup;
 
 	// search soundGroup in archives
 	soundGroup = this.soundGroupArchiveById[id];
-	if (!soundGroup) { return null; }
+	if (!soundGroup) return null;
 
 	// remove soundGroup from archives
 	this.soundGroupArchive.removeByRef(soundGroup.poolRef);
@@ -230,12 +234,12 @@ AudioManager.prototype.getSoundGroup = function (id) {
  * @param {number} sound - sound wrapper object
  */
 AudioManager.prototype.freeSound = function (sound) {
-	var id = sound.id;
-	if (this.soundsById[id]) { delete this.soundsById[id]; }
-	if (this.soundArchiveById[id]) {
+	var soundId = sound.id;
+	if (this.soundsById[soundId]) { delete this.soundsById[soundId]; }
+	if (this.soundArchiveById[soundId]) {
 		this.soundArchive.removeByRef(sound.poolRef);
 		sound.poolRef = null;
-		delete this.soundArchiveById[id];
+		delete this.soundArchiveById[soundId];
 	}
 	sound.unload();
 	this.freeSoundPool.push(sound);
@@ -249,46 +253,40 @@ AudioManager.prototype.freeSound = function (sound) {
  * @param {string} soundId   - sound id
  * @param {number} [volume]  - sound volume, a integer in rage ]0..1]
  */
-AudioManager.prototype.playLoopSound = function (channelId, id, volume) {
-	var defaultFade = this.settings.defaultFade;
-	var channel = this.channels[channelId];
-	var currentSoundId = channel.sound && channel.soundParam && channel.soundParam.id;
-	if (id === currentSoundId) { return; }
-	if (channel.muted) { return; }
-	var self = this;
-	var currentSound = channel.sound;
+AudioManager.prototype.playLoopSound = function (channelId, soundId, volume) {
+	var defaultFade    = this.settings.defaultFade;
+	var channel        = this.channels[channelId];
+	var currentSoundId = channel.loopId;
+	var currentSound   = channel.loopSound;
+
 	volume = Math.max(0, Math.min(1, volume || 1));
 
-	this.loadSound(id, function onSoundLoad(error, sound) {
-		if (error) {
-			// FIXME: should we stop current sound ?
-			return console.error(error);
-		}
+	channel.loopId  = soundId;
+	channel.loopVol = volume;
 
-		channel.soundParam = { id: id, vol: volume };
+	if (soundId === currentSoundId && currentSound && currentSound.playing) return; // TODO: update volume
+	if (channel.muted) return;
 
-		function startLoop() {
-			if (!sound) {
-				channel.sound = null;
-				return;
-			}
-			sound.setLoop(true); // TODO: loop can be a number (set in game global options)
-			sound.fade = defaultFade;
-			sound.play(channel.volume * volume, 0, true); // TODO: use streaming for music
-			channel.sound = sound;
-		}
+	function switchLoop() {
+		var sound = channel.loopSound = channel.nextLoop;
+		channel.nextLoop = null;
+		sound.setLoop(true);
+		sound.fade = defaultFade;
+		sound.play();
+	}
 
-		if (currentSound) {
-			// TODO: fade-out current music
-			currentSound.stop(function onSoundStop() {
-				self.freeSound(currentSound);
-				startLoop();
-			});
-		} else {
-			startLoop();
-		}
-	});
+	function stopCurrentLoop() {
+		if (!channel.loopSound) return switchLoop();
+		channel.loopSound.stop(function onStop() {
+			switchLoop();
+		});
+	}
+
+	if (channel.nextLoop) this.freeSound(channel.nextLoop);
+	channel.nextLoop = this.loadSound(soundId, stopCurrentLoop);
 };
+
+
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Stop currently playing lopped sound in channel */
@@ -296,22 +294,20 @@ AudioManager.prototype.stopLoopSound = function (channelId) {
 	var self = this;
 	var channel = this.channels[channelId];
 	if (!channel) return console.warn('Channel id "' + channelId + '" does not exist.');
-	var currentSound = channel.sound;
+	var currentSound = channel.loopSound;
+	channel.loopId = null;
 	if (!currentSound) return;
 	currentSound.stop(function onSoundStop() {
 		self.freeSound(currentSound);
-		channel.sound = null;
+		channel.loopSound = null;
 	});
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Stop and cleanup all looped sounds */
 AudioManager.prototype.stopAllLoopSounds = function () {
-	for (var id in this.channels) {
-		var channel = this.channels[id];
-		if (channel.sound) { channel.sound.stop(); }
-		channel.sound      = null;
-		channel.soundParam = null;
+	for (var channelId in this.channels) {
+		this.stopLoopSound(channelId);
 	}
 };
 
@@ -329,8 +325,8 @@ AudioManager.prototype.release = function () {
 	var loopedSounds = {};
 	for (id in this.channels) {
 		var channel = this.channels[id];
-		if (channel.sound) {
-			loopedSounds[channel.sound.id] = true;
+		if (channel.loopSound) {
+			loopedSounds[channel.loopSound.id] = true;
 		}
 	}
 
@@ -344,7 +340,7 @@ AudioManager.prototype.release = function () {
 
 	// archive all sounds
 	for (id in this.soundsById) {
-		if (loopedSounds[id]) { continue; }
+		if (loopedSounds[id]) continue;
 		sound = this.soundsById[id];
 		sound.poolRef = this.soundArchive.add(sound);
 		this.soundArchiveById[id] = sound;
@@ -355,7 +351,7 @@ AudioManager.prototype.release = function () {
 	var count = this.soundGroupArchive.getCount();
 	while (count > maxSoundGroup) {
 		soundGroup = this.soundGroupArchive.popFirst();
-		if (!soundGroup) { break; }
+		if (!soundGroup) break;
 		soundGroup.poolRef = null;
 		delete this.soundGroupArchiveById[soundGroup.id];
 		count -= 1;
@@ -364,7 +360,7 @@ AudioManager.prototype.release = function () {
 	// free sounds if memory limit is reached
 	while (this.usedMemory > maxUsedMemory) {
 		sound = this.soundArchive.popFirst();
-		if (!sound) { break; }
+		if (!sound) break;
 		sound.poolRef = null;
 		delete this.soundArchiveById[sound.id];
 		this.freeSound(sound);
@@ -376,46 +372,53 @@ AudioManager.prototype.release = function () {
  *
  * @param {String} channelId - channel id used to play sound
  * @param {String} soundId   - sound id
+ * @param {number} [volume]  - optional volume value. volume:]0..1]
+ * @param {number} [pan]     - optional panoramic value. pan:[-1..1]
+ * @param {number} [pitch]   - optional pitch value in semi-tone. Only work with webAudio enabled
  */
-AudioManager.prototype.playSound = function (channelId, soundId) {
+AudioManager.prototype.playSound = function (channelId, soundId, volume, pan, pitch) {
 	var channel = this.channels[channelId];
-	if (channel.muted) { return; }
+	if (channel.muted) return;
 	var sound = this.getSound(soundId);
-	if (!sound) { return; }
-	sound.play(channel.volume);
+	if (!sound) { sound = this.createSound(soundId); }
+	volume = volume || 1.0;
+	sound.play(channel.volume * volume, pan, pitch);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Play a sound group
  *
- * @param {String} soundGroupId - sound group id
- * @param {number} pan          - panoramic value. pan:[-1..1]
  * @param {String} channelId    - channel id used to play sound
+ * @param {String} soundGroupId - sound group id
+ * @param {number} [volume]     - optional volume value. volume:]0..1]
+ * @param {number} [pan]        - optional panoramic value. pan:[-1..1]
  */
-AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, pan) {
+AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, volume, pan, pitch) {
 	var channel = this.channels[channelId];
-	if (channel.muted) { return; }
+	if (channel.muted) return;
 	var soundGroup = this.getSoundGroup(soundGroupId);
-	if (!soundGroup) { return; }
-	soundGroup.play(channel.volume, pan);
+	if (!soundGroup) return console.warn('SoundGroup "' + soundGroupId + '" does not exist.');
+	volume = volume || 1.0;
+	soundGroup.play(volume * channel.volume, pan, pitch);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Create a list of sound groups.
  *
- * @param {Object}   soundGroupDefs        - definitions of sound groups
- *        {String[]} soundGroupDefs[*].id  - sound ids
- *        {String[]} soundGroupDefs[*].vol - sound volumes. vol:[0..1]
- * @param {String}  [channelId]            - channel id the sound group will play in
+ * @param {Object}   soundGroupDefs          - definitions of sound groups
+ *        {String[]} soundGroupDefs[*].id    - sound ids
+ *        {String[]} soundGroupDefs[*].vol   - sound volumes. vol:[0..1]
+ *        {String[]} soundGroupDefs[*].pitch - sound pitches in semi-tone.
+ * @param {String}  [channelId]              - channel id the sound group will play in
  */
 AudioManager.prototype.createSoundGroups = function (soundGroupDefs, channelId) {
 	var muted = channelId !== undefined ? this.channels[channelId].muted : false;
 	for (var soundGroupId in soundGroupDefs) {
-		var anim = soundGroupDefs[soundGroupId];
-		if (this.soundGroupsById[soundGroupId]) { continue; }
+		var def = soundGroupDefs[soundGroupId];
+		if (this.soundGroupsById[soundGroupId]) continue;
 		var soundGroup = this.getSoundGroup(soundGroupId);
 		if (!soundGroup) {
-			soundGroup = new SoundGroup(soundGroupId, anim.id, anim.vol, muted);
+			soundGroup = new SoundGroup(soundGroupId, def.id, def.vol, def.pitch, muted);
 			this.soundGroupsById[soundGroupId] = soundGroup;
 		}
 	}

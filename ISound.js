@@ -1,6 +1,3 @@
-// jscs:disable requireCurlyBraces
-
-
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Sound Abstract class.
  * Implement dynamic loading / unloading mechanism.
@@ -10,16 +7,18 @@
  */
 function ISound() {
 	// public properties
+	this.playing         = false;
 	this.fade            = 0;
 	this.usedMemory      = 0;
 	this.poolRef         = null;
 
 	// the following properties are public but should NOT be assigned directly.
-	// instead, use the setter functions: setId, setVolume, setPan, setLoop.
+	// instead, use the setter functions: setId, setVolume, setPan, setLoop, setPitch.
 	this.id              = 0;
 	this.volume          = 1.0;
 	this.pan             = 0.0;
 	this.loop            = false;
+	this.pitch           = 0.0;
 
 	// private properties
 	this._src            = '';
@@ -57,6 +56,11 @@ ISound.prototype.setLoop = function (value) {
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+ISound.prototype.setPitch = function (pitch) {
+	this.pitch = pitch;
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Load sound. Abstract method to be overwritten
  * @private
  *
@@ -73,11 +77,11 @@ ISound.prototype._load = function (filePath) {
  * @param {Function} [cd] - optional callback function
  */
 ISound.prototype.load = function (cb) {
-	if (!this.id) { return console.error('Can not load a sound without id.'); }
-	if (this._loaded) { return cb && cb(null, this); }
+	if (!this.id) return cb && cb('noId');
+	if (this._loaded) return cb && cb(null, this);
 
 	if (cb) { this._queuedCallback.push(cb); }
-	if (this._loading) { return; }
+	if (this._loading) return;
 	this._loading = true;
 
 	return this._load(this._src, this);
@@ -116,7 +120,8 @@ ISound.prototype._finalizeLoad = function (error) {
 ISound.prototype.unload = function () {
 	this._playTriggered = 0;
 	this.setLoop(false);
-	this.fade = 0;
+	this.fade  = 0;
+	this.pitch = 0;
 	this.stop();
 
 	if (this._loading) {
@@ -139,12 +144,13 @@ ISound.prototype.unload = function () {
 /** Play sound. If sound is not yet loaded, it is loaded in memory and flagged to be played
  *  once loading has finished. If loading take too much time, playback may be cancelled.
  *
- * @param {number} vol - volume
- * @param {number} pan - panoramic
+ * @param {number} [vol]   - optional volume
+ * @param {number} [pan]   - optional panoramic
+ * @param {number} [pitch] - optional pitch value in semi-tone (available only if using webAudio)
  */
-ISound.prototype.play = function (vol, pan) {
-	if (vol !== undefined) { this.setVolume(vol); }
-	if (pan !== undefined) { this.setPan(pan); }
+ISound.prototype.play = function (vol, pan, pitch) {
+	if (vol !== undefined && vol !== null) { this.setVolume(vol); }
+	if (pan !== undefined && pan !== null) { this.setPan(pan); }
 
 	if (!this._loaded) {
 		this._playTriggered = Date.now();
@@ -152,12 +158,13 @@ ISound.prototype.play = function (vol, pan) {
 		return;
 	}
 
-	this._play();
+	this._play(pitch);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Play sound. Abstract method to be overwritten */
 ISound.prototype._play = function () {
+	this.playing = true;
 	console.log('ISound play call: "' + this._src + '"');
 };
 
@@ -167,5 +174,6 @@ ISound.prototype._play = function () {
  * @param {Function} [cb] - optional callback function (use it when sound has a fade out)
  */
 ISound.prototype.stop = function (cb) {
+	this.playing = false;
 	return cb && cb();
 };
