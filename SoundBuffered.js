@@ -111,13 +111,13 @@ SoundBuffered.prototype.setLoop = function (value) {
  */
 SoundBuffered.prototype.setPitch = function (pitch, portamento) {
 	this.pitch = pitch;
-	this._setPlaybackRate(pitch, portamento);
+	this._setPlaybackRate(portamento);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-SoundBuffered.prototype._setPlaybackRate = function (pitch, portamento) {
+SoundBuffered.prototype._setPlaybackRate = function (portamento) {
 	if (!this.source) return;
-	var rate = Math.pow(2, (this._playPitch + pitch) / 12);
+	var rate = Math.pow(2, (this._playPitch + this.pitch) / 12);
 	portamento = portamento || 0;
 	this.source.playbackRate.setTargetAtTime(rate, this.audioContext.currentTime, portamento);
 };
@@ -205,7 +205,7 @@ SoundBuffered.prototype._play = function (pitch) {
 		// update pitch if needed
 		if ((pitch || pitch === 0) && pitch !== this._playPitch) {
 			this._playPitch = pitch;
-			this._setPlaybackRate(this.pitch + this._playPitch, 0);
+			this._setPlaybackRate(0);
 		}
 		return;
 	}
@@ -231,7 +231,7 @@ SoundBuffered.prototype._play = function (pitch) {
 
 	this._playPitch = pitch || 0;
 	if (pitch || this.pitch) {
-		this._setPlaybackRate(this.pitch + this._playPitch, 0);
+		this._setPlaybackRate(0);
 	}
 
 	sourceNode.loop      = this.loop;
