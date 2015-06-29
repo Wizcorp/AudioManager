@@ -407,21 +407,31 @@ AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, volum
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Create a list of sound groups.
  *
+ * @param {String}   soundGroupId        - soundGroup id
+ * @param {Object}   soundGroupDef       - definition of sound group
+ *        {String[]} soundGroupDef.id    - sound ids
+ *        {number[]} soundGroupDef.vol   - sound volumes. vol:[0..1]
+ *        {number[]} soundGroupDef.pitch - sound pitches in semi-tone.
+ * @param {String}  [muted]              - if muted, then sounds are created but not loaded
+ */
+AudioManager.prototype.createSoundGroup = function (soundGroupId, soundGroupDef, muted) {
+	if (this.getSoundGroup(soundGroupId)) return;
+	var soundGroup = new SoundGroup(soundGroupId, soundGroupDef.id, soundGroupDef.vol, soundGroupDef.pitch, muted);
+	this.soundGroupsById[soundGroupId] = soundGroup;
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+/** Create a list of sound groups.
+ *
  * @param {Object}   soundGroupDefs          - definitions of sound groups
  *        {String[]} soundGroupDefs[*].id    - sound ids
- *        {String[]} soundGroupDefs[*].vol   - sound volumes. vol:[0..1]
- *        {String[]} soundGroupDefs[*].pitch - sound pitches in semi-tone.
+ *        {number[]} soundGroupDefs[*].vol   - sound volumes. vol:[0..1]
+ *        {number[]} soundGroupDefs[*].pitch - sound pitches in semi-tone.
  * @param {String}  [channelId]              - channel id the sound group will play in
  */
 AudioManager.prototype.createSoundGroups = function (soundGroupDefs, channelId) {
 	var muted = channelId !== undefined ? this.channels[channelId].muted : false;
 	for (var soundGroupId in soundGroupDefs) {
-		var def = soundGroupDefs[soundGroupId];
-		if (this.soundGroupsById[soundGroupId]) continue;
-		var soundGroup = this.getSoundGroup(soundGroupId);
-		if (!soundGroup) {
-			soundGroup = new SoundGroup(soundGroupId, def.id, def.vol, def.pitch, muted);
-			this.soundGroupsById[soundGroupId] = soundGroup;
-		}
+		this.createSoundGroup(soundGroupId, soundGroupDefs[soundGroupId], muted);
 	}
 };
