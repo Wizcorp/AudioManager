@@ -407,6 +407,21 @@ AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, volum
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Create a list of sound groups.
  *
+ * @param {Stirng}   soundGroupId        - soundGroup id
+ * @param {String[]} soundGroupDef.id    - sound ids
+ *        {String[]} soundGroupDef.vol   - sound volumes. vol:[0..1]
+ *        {String[]} soundGroupDef.pitch - sound pitches in semi-tone.
+ * @param {String}  [muted]              - if muted, then sounds are created but not loaded
+ */
+AudioManager.prototype.createSoundGroup = function (soundGroupId, soundGroupDef, muted) {
+	if (this.getSoundGroup(soundGroupId)) return;
+	var soundGroup = new SoundGroup(soundGroupId, soundGroupDef.id, soundGroupDef.vol, soundGroupDef.pitch, muted);
+	this.soundGroupsById[soundGroupId] = soundGroup;
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+/** Create a list of sound groups.
+ *
  * @param {Object}   soundGroupDefs          - definitions of sound groups
  *        {String[]} soundGroupDefs[*].id    - sound ids
  *        {String[]} soundGroupDefs[*].vol   - sound volumes. vol:[0..1]
@@ -416,12 +431,6 @@ AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, volum
 AudioManager.prototype.createSoundGroups = function (soundGroupDefs, channelId) {
 	var muted = channelId !== undefined ? this.channels[channelId].muted : false;
 	for (var soundGroupId in soundGroupDefs) {
-		var def = soundGroupDefs[soundGroupId];
-		if (this.soundGroupsById[soundGroupId]) continue;
-		var soundGroup = this.getSoundGroup(soundGroupId);
-		if (!soundGroup) {
-			soundGroup = new SoundGroup(soundGroupId, def.id, def.vol, def.pitch, muted);
-			this.soundGroupsById[soundGroupId] = soundGroup;
-		}
+		this.createSoundGroup(soundGroupId, soundGroupDefs[soundGroupId], muted);
 	}
 };
