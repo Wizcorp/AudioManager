@@ -17,7 +17,7 @@ audioManager.playSound(channelId, soundId, volume, panoramic, pitch);
 
 // sound group
 audioManager.createSoundGroups(soundGroupDefs, channelId);
-audioManager.createSoundGroups(soundGroupId, soundGroupDef, muted);
+audioManager.createSoundGroup(soundGroupId, soundGroupDef, muted);
 audioManager.playSoundGroup(channelId, groupId, volume, panoramic, pitch);
 
 // loop
@@ -119,7 +119,7 @@ var pitch     = 3.0; // in semi-tone
 audioManager.playSoundGroup('sfx', 'punch', volume, panoramic, pitch);
 ```
 
-Create several sound groups in one function call
+You can create several sound groups in one function call
 ```javascript
 var soundGroupDefs = {
 	groupId1: { id: ['sound1', 'sound2'], vol: [1.0, 0.8], pitch: [0.0] },
