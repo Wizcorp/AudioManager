@@ -17,6 +17,7 @@ audioManager.playSound(channelId, soundId, volume, panoramic, pitch);
 
 // sound group
 audioManager.createSoundGroups(soundGroupDefs, channelId);
+audioManager.createSoundGroups(soundGroupId, soundGroupDef, muted);
 audioManager.playSoundGroup(channelId, groupId, volume, panoramic, pitch);
 
 // loop
@@ -105,17 +106,27 @@ sound.setPitch(pitch, portamento);
 A sound group is a collection of sounds that will play alternatively in a 
 round-robin pattern on each `play` call.
 ```javascript
+var soundGroupDef = {
+	id:  ['punch1', 'punch2'],
+	vol: [1.0, 0.8],
+	pitch: [0.0]
+};
+audioManager.createSoundGroups('punch', soundGroupDef);
+
+var volume    = 0.8; // volume is a float in range ]0..1]
+var panoramic = 0.3; // panoramic is a float in range [-1..1], 0 is the center
+var pitch     = 3.0; // in semi-tone
+audioManager.playSoundGroup('sfx', 'punch', volume, panoramic, pitch);
+```
+
+Create several sound groups in one function call
+```javascript
 var soundGroupDefs = {
 	groupId1: { id: ['sound1', 'sound2'], vol: [1.0, 0.8], pitch: [0.0] },
 	groupId2: { ... },
 	...
 };
 audioManager.createSoundGroups(soundGroupDefs, 'sfx');
-
-var volume    = 0.8; // volume is a float in range ]0..1]
-var panoramic = 0.3; // panoramic is a float in range [-1..1], 0 is the center
-var pitch     = 3.0; // in semi-tone
-audioManager.playSoundGroup('sfx', 'groupId1', volume, panoramic, pitch);
 ```
 
 ### Play and stop looped sounds
