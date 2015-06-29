@@ -407,7 +407,7 @@ AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, volum
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Create a list of sound groups.
  *
- * @param {Stirng}   soundGroupId        - soundGroup id
+ * @param {String}   soundGroupId        - soundGroup id
  * @param {String[]} soundGroupDef.id    - sound ids
  *        {String[]} soundGroupDef.vol   - sound volumes. vol:[0..1]
  *        {String[]} soundGroupDef.pitch - sound pitches in semi-tone.
