@@ -410,8 +410,8 @@ AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, volum
  * @param {String}   soundGroupId        - soundGroup id
  * @param {Object}   soundGroupDef       - definition of sound group
  *        {String[]} soundGroupDef.id    - sound ids
- *        {String[]} soundGroupDef.vol   - sound volumes. vol:[0..1]
- *        {String[]} soundGroupDef.pitch - sound pitches in semi-tone.
+ *        {number[]} soundGroupDef.vol   - sound volumes. vol:[0..1]
+ *        {number[]} soundGroupDef.pitch - sound pitches in semi-tone.
  * @param {String}  [muted]              - if muted, then sounds are created but not loaded
  */
 AudioManager.prototype.createSoundGroup = function (soundGroupId, soundGroupDef, muted) {
@@ -425,8 +425,8 @@ AudioManager.prototype.createSoundGroup = function (soundGroupId, soundGroupDef,
  *
  * @param {Object}   soundGroupDefs          - definitions of sound groups
  *        {String[]} soundGroupDefs[*].id    - sound ids
- *        {String[]} soundGroupDefs[*].vol   - sound volumes. vol:[0..1]
- *        {String[]} soundGroupDefs[*].pitch - sound pitches in semi-tone.
+ *        {number[]} soundGroupDefs[*].vol   - sound volumes. vol:[0..1]
+ *        {number[]} soundGroupDefs[*].pitch - sound pitches in semi-tone.
  * @param {String}  [channelId]              - channel id the sound group will play in
  */
 AudioManager.prototype.createSoundGroups = function (soundGroupDefs, channelId) {
