@@ -45,7 +45,8 @@ audioManager.settings.audioPath = 'assets/audio/';
 
 ### Start audio engine.
 To work correctly on iOS, this must be called on an user interaction
-(e.g. user pressing a button)
+e.g. user pressing a button.
+(C.f. [this page](https://developer.apple.com/library/safari/documentation/AudioVideo/Conceptual/Using_HTML5_Audio_Video/Device-SpecificConsiderations/Device-SpecificConsiderations.html) to understand how this work.)
 ```javascript
 gameStartButton.on('tap', function () {
 	audioManager.init();
