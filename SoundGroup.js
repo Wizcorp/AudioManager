@@ -17,19 +17,24 @@ function SoundGroup(id, soundIds, volumes, pitches, muted) {
 	this.volIndex   = 0;
 	this.pitchIndex = 0;
 	this.poolRef    = null;
-
-	for (var i = 0; i < soundIds.length; i++) {
-		if (muted) {
-			this.audioManager.createSound(soundIds[i]);
-		} else {
-			this.audioManager.loadSound(soundIds[i]);
-		}
-	}
+	this._ready     = false;
 
 	if (this.volumes.length === 0) this.volumes.push(1.0);
 	if (this.pitches.length === 0) this.pitches.push(0.0);
+
+	if (!muted) this._createSounds();
 }
 module.exports = SoundGroup;
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+/** Create and load all sound used in group */
+SoundGroup.prototype._createSounds = function () {
+	var soundIds = this.soundIds;
+	for (var i = 0; i < soundIds.length; i++) {
+		this.audioManager.loadSound(soundIds[i]);
+	}
+	this._ready = true;
+};
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Play sound group.
@@ -40,6 +45,7 @@ module.exports = SoundGroup;
  */
 SoundGroup.prototype.play = function (volume, pan, pitch) {
 	if (this.soundIds.length === 0) return;
+	if (!this._ready) this._createSounds();
 	var soundId = this.soundIds[this.soundIndex++];
 	var sound = this.audioManager.getSound(soundId);
 	if (!sound) return console.warn('[Sound Group: ' + this.id + '] sound id ' + soundId + '  cannot be played.');

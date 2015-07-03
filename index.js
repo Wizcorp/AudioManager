@@ -128,7 +128,7 @@ AudioManager.prototype.setVolume = function (channelId, volume, muted) {
 		if (wasChannelMuted) { channel.loopSound.play(); }
 	} else if (!channel.muted) {
 		// no sounds are loaded in channel, channel is unmutted
-		this.playLoopSound(channelId, channel.loopId, volume * channel.loopVol);
+		this.playLoopSound(channelId, channel.loopId, channel.loopVol);
 	}
 };
 
@@ -266,7 +266,11 @@ AudioManager.prototype.playLoopSound = function (channelId, soundId, volume, pan
 	channel.loopId  = soundId;
 	channel.loopVol = volume;
 
-	if (soundId === currentSoundId && currentSound && currentSound.playing) return; // TODO: update volume
+	if (soundId === currentSoundId && currentSound && currentSound.playing) {
+		// update volume
+		currentSound.play(volume * channel.volume, pan, pitch);
+		return;
+	}
 	if (channel.muted) return;
 
 	function switchLoop() {

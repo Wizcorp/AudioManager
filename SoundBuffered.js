@@ -26,6 +26,7 @@ inherits(SoundBuffered, ISound);
 module.exports = SoundBuffered;
 
 
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 SoundBuffered.prototype.init = function () {
 	var maxPlayLatency = this.audioManager.settings.maxPlayLatency;
 	var self = this;
