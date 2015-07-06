@@ -19,6 +19,7 @@ function SoundBuffered() {
 	this._playPitch      = 0.0;
 	this._fadeTimeout    = null;
 	this._onStopCallback = null;
+	this._audioNodeReady = false;
 
 	if (this.audioContext) this.init();
 }
@@ -26,9 +27,9 @@ inherits(SoundBuffered, ISound);
 module.exports = SoundBuffered;
 
 
-SoundBuffered.prototype.init = function () {
-	var maxPlayLatency = this.audioManager.settings.maxPlayLatency;
-	var self = this;
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+SoundBuffered.prototype._createAudioNodes = function () {
+	if (this._audioNodeReady) return;
 
 	// create webAudio nodes
 	// source -> gain -> pan -> destination
@@ -52,6 +53,33 @@ SoundBuffered.prototype.init = function () {
 	this.sourceConnector = gainNode;
 	this.gain            = gainNode.gain;
 	this.panNode         = panNode;
+
+	this._audioNodeReady = true;
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+SoundBuffered.prototype._destroyAudioNodes = function () {
+	var audioContext = this.audioContext;
+	var panNode      = this.panNode;
+	var gainNode     = this.sourceConnector;
+
+	gainNode.disconnect(panNode);
+	panNode.disconnect(audioContext.destination);
+
+	this.sourceConnector = null;
+	this.gain            = null;
+	this.panNode         = null;
+	this.rawAudioData    = null;
+	this._audioNodeReady = false;
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+SoundBuffered.prototype.init = function () {
+	var self           = this;
+	var maxPlayLatency = this.audioManager.settings.maxPlayLatency;
+	var audioContext   = this.audioContext;
+
+	this._createAudioNodes();
 
 	function onAudioDecodeSuccess(buffer) {
 		self.buffer = buffer;
@@ -132,6 +160,8 @@ SoundBuffered.prototype._setPlaybackRate = function (portamento) {
 SoundBuffered.prototype._load = function (filePath) {
 	var self = this;
 
+	this._createAudioNodes();
+
 	function loadFail() {
 		// TODO: keep track that loading has failed so we don't retry to load it ?
 		self._finalizeLoad('Sound could not be loaded.');
@@ -187,6 +217,7 @@ SoundBuffered.prototype.unload = function () {
 			this.source = null;
 		}
 	}
+	this._destroyAudioNodes();
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄

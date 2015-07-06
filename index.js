@@ -44,6 +44,7 @@ function AudioManager(channels) {
 	// settings
 	this.settings = {
 		audioPath:      '',   // path to audio assets folder
+		assetSeverUrl:  '',   // asset server url
 		maxSoundGroup:  500,
 		maxUsedMemory:  300,  // seconds
 		defaultFade:    2,    // seconds
@@ -65,11 +66,17 @@ module.exports = AudioManager;
 
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+/** Initialise audio.
+ *  On iOS, this function must be called on an user interaction (e.g. tap a button) or sound won't play.
+ */
 AudioManager.prototype.init = function () {
 	if (this.audioContext || !AudioContext) return;
 	this.audioContext = new AudioContext();
+
+	// register audioContext on sound Class
 	SoundObject.prototype.audioContext = this.audioContext;
 	
+	// sounds could have been preloaded, initialize them.
 	for (var id in this.soundsById) {
 		this.soundsById[id].init();
 	}
@@ -128,7 +135,7 @@ AudioManager.prototype.setVolume = function (channelId, volume, muted) {
 		if (wasChannelMuted) { channel.loopSound.play(); }
 	} else if (!channel.muted) {
 		// no sounds are loaded in channel, channel is unmutted
-		this.playLoopSound(channelId, channel.loopId, volume * channel.loopVol);
+		this.playLoopSound(channelId, channel.loopId, channel.loopVol);
 	}
 };
 
@@ -266,7 +273,11 @@ AudioManager.prototype.playLoopSound = function (channelId, soundId, volume, pan
 	channel.loopId  = soundId;
 	channel.loopVol = volume;
 
-	if (soundId === currentSoundId && currentSound && currentSound.playing) return; // TODO: update volume
+	if (soundId === currentSoundId && currentSound && currentSound.playing) {
+		// update volume
+		currentSound.play(volume * channel.volume, pan, pitch);
+		return;
+	}
 	if (channel.muted) return;
 
 	function switchLoop() {
