@@ -1,7 +1,7 @@
 {
 	"name": "AudioManager",
 	"repo": "Wizcorp/AudioManager",
-	"version": "0.1.3",
+	"version": "0.1.4",
 	"description": "Play sounds using Web Audio, fallback to HTML5 Audio",
 	"dependencies": {
 		"Wizcorp/util": "0.1.0"
