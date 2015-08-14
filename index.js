@@ -88,6 +88,7 @@ AudioManager.prototype.getEmptySound = function () {
 	var sound;
 	if (this.freeSoundPool.length > 0) {
 		sound = this.freeSoundPool.pop();
+		sound.init();
 	} else {
 		sound = new SoundObject();
 	}
