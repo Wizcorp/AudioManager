@@ -1,0 +1,24 @@
+{
+  "name": "audio-manager",
+  "version": "0.1.5",
+  "description": "Play sounds using Web Audio, fallback to HTML5 Audio",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Wizcorp/AudioManager.git"
+  },
+  "keywords": [
+    "audio",
+    "webAudio",
+    "sound"
+  ],
+  "author": "Cedric Stoquer",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Wizcorp/AudioManager/issues"
+  },
+  "homepage": "https://github.com/Wizcorp/AudioManager"
+}
