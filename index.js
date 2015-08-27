@@ -49,7 +49,8 @@ function AudioManager(channels) {
 		maxUsedMemory:  300,  // seconds
 		defaultFade:    2,    // seconds
 		maxPlayLatency: 1000, // milliseconds
-		fadeOutRatio:   0.4
+		fadeOutRatio:   0.4,
+		crossFading:    false
 	};
 
 	// create channels
@@ -88,6 +89,7 @@ AudioManager.prototype.getEmptySound = function () {
 	var sound;
 	if (this.freeSoundPool.length > 0) {
 		sound = this.freeSoundPool.pop();
+		sound.init();
 	} else {
 		sound = new SoundObject();
 	}
@@ -264,6 +266,7 @@ AudioManager.prototype.freeSound = function (sound) {
  */
 AudioManager.prototype.playLoopSound = function (channelId, soundId, volume, pan, pitch) {
 	var defaultFade    = this.settings.defaultFade;
+	var crossFading    = this.settings.crossFading;
 	var channel        = this.channels[channelId];
 	var currentSoundId = channel.loopId;
 	var currentSound   = channel.loopSound;
@@ -273,33 +276,59 @@ AudioManager.prototype.playLoopSound = function (channelId, soundId, volume, pan
 	channel.loopId  = soundId;
 	channel.loopVol = volume;
 
-	if (soundId === currentSoundId && currentSound && currentSound.playing) {
-		// update volume
-		currentSound.play(volume * channel.volume, pan, pitch);
-		return;
-	}
+	// don't load or play sound if channel is mutted
 	if (channel.muted) return;
 
-	function switchLoop() {
-		var sound = channel.loopSound = channel.nextLoop;
-		channel.nextLoop = null;
-		sound.setLoop(true);
-		sound.fade = defaultFade;
-		sound.play(volume * channel.volume, pan, pitch);
+	// if requested sound is already playing, update volume, pan and pitch
+	if (soundId === currentSoundId && currentSound && currentSound.playing) {
+		currentSound.play(volume * channel.volume, pan, pitch);
+		if (channel.nextLoop) {
+			channel.nextLoop.cancelOnLoadCallbacks();
+			channel.nextLoop = null;
+		}
+		return;
 	}
 
-	function stopCurrentLoop() {
-		if (!channel.loopSound) return switchLoop();
-		channel.loopSound.stop(function onStop() {
-			switchLoop();
+	// check if requested sound is already scheduled to play next
+	if (channel.nextLoop && channel.nextLoop.id === soundId) return;
+
+	var self = this;
+
+	function stopCurrentLoop(sound, cb) {
+		if (!sound) return cb && cb();
+		if (sound.stopping) return; // callback is already scheduled
+		sound.stop(function () {
+			self.freeSound(sound); // TODO: add an option to keep file in memory
+			return cb && cb();
 		});
 	}
 
-	if (channel.nextLoop) this.freeSound(channel.nextLoop);
-	channel.nextLoop = this.loadSound(soundId, stopCurrentLoop);
+	function playNextSound() {
+		var sound = channel.loopSound = channel.nextLoop;
+		channel.nextLoop = null;
+		if (!sound) return;
+		sound.setLoop(true);
+		sound.fade = defaultFade;
+		sound.play(volume * channel.volume, pan, pitch); // load and play
+	}
+
+	if (crossFading) {
+		if (channel.nextLoop) {
+			// if another nextSound already loading, cancel previous callback
+			channel.nextLoop.cancelOnLoadCallbacks();
+		}
+		channel.nextLoop = this.createSound(soundId);
+		channel.nextLoop.load(function onSoundLoad(error) {
+			if (error) return;
+			stopCurrentLoop(channel.loopSound);
+			playNextSound();
+		});
+
+	} else {
+		channel.nextLoop = this.createSound(soundId);
+		stopCurrentLoop(channel.loopSound, playNextSound);
+	}
 };
-
-
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Stop currently playing lopped sound in channel */
@@ -408,7 +437,7 @@ AudioManager.prototype.playSound = function (channelId, soundId, volume, pan, pi
  */
 AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, volume, pan, pitch) {
 	var channel = this.channels[channelId];
-	if (channel.muted) return;
+	if (!channel || channel.muted) return;
 	var soundGroup = this.getSoundGroup(soundGroupId);
 	if (!soundGroup) return console.warn('SoundGroup "' + soundGroupId + '" does not exist.');
 	volume = volume || 1.0;

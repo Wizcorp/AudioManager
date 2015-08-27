@@ -8,6 +8,7 @@
 function ISound() {
 	// public properties
 	this.playing         = false;
+	this.stopping        = false;
 	this.fade            = 0;
 	this.usedMemory      = 0;
 	this.poolRef         = null;
@@ -26,7 +27,8 @@ function ISound() {
 	this._loading        = false;
 	this._unloading      = false;
 	this._playTriggered  = 0;
-	this._queuedCallback = [];
+
+	this._onLoadQueuedCallback = [];
 }
 
 module.exports = ISound;
@@ -82,7 +84,7 @@ ISound.prototype.load = function (cb) {
 	if (!this.id) return cb && cb('noId');
 	if (this._loaded) return cb && cb(null, this);
 
-	if (cb) { this._queuedCallback.push(cb); }
+	if (cb) { this._onLoadQueuedCallback.push(cb); }
 	if (this._loading) return;
 	this._loading = true;
 
@@ -101,10 +103,10 @@ ISound.prototype._finalizeLoad = function (error) {
 	this._loaded  = !error;
 	this._loading = false;
 
-	for (var i = 0; i < this._queuedCallback.length; i++) {
-		this._queuedCallback[i](error, this);
+	for (var i = 0; i < this._onLoadQueuedCallback.length; i++) {
+		this._onLoadQueuedCallback[i](error, this);
 	}
-	this._queuedCallback = [];
+	this._onLoadQueuedCallback = [];
 
 	if (this._unloading) {
 		this._unloading = false;
@@ -141,6 +143,12 @@ ISound.prototype.unload = function () {
 	this.usedMemory = 0;
 
 	return true;
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+/** Remove callback set on load */
+ISound.prototype.cancelOnLoadCallbacks = function () {
+	this._onLoadQueuedCallback = [];
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄

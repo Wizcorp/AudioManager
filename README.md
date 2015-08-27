@@ -141,6 +141,12 @@ audioManager.stopLoopSound('music'); // stop looped sound in channel 'music'
 audioManager.stopAllLoopSounds();    // stop all looped sounds in all channel
 ```
 
+How looped sound fades and mixes can be set by modifying audioManager settings:
+```javascript
+audioManager.settings.defaultFade = 3;    // value in second
+audioManager.settings.crossFade   = true; // default is false
+```
+
 ### Release memory
 ```javascript
 audioManager.release();

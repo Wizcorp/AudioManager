@@ -21,7 +21,7 @@ function SoundBuffered() {
 	this._onStopCallback = null;
 	this._audioNodeReady = false;
 
-	if (this.audioContext) this.init();
+	this.init();
 }
 inherits(SoundBuffered, ISound);
 module.exports = SoundBuffered;
@@ -30,6 +30,7 @@ module.exports = SoundBuffered;
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 SoundBuffered.prototype._createAudioNodes = function () {
 	if (this._audioNodeReady) return;
+	if (!this.audioContext) return;
 
 	// create webAudio nodes
 	// source -> gain -> pan -> destination
@@ -75,11 +76,14 @@ SoundBuffered.prototype._destroyAudioNodes = function () {
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 SoundBuffered.prototype.init = function () {
+	this._createAudioNodes();
+
+	if (!this.rawAudioData) return;
+
 	var self           = this;
 	var maxPlayLatency = this.audioManager.settings.maxPlayLatency;
 	var audioContext   = this.audioContext;
 
-	this._createAudioNodes();
 
 	function onAudioDecodeSuccess(buffer) {
 		self.buffer = buffer;
@@ -96,9 +100,7 @@ SoundBuffered.prototype.init = function () {
 		console.error('decode audio failed for sound ', self.id);
 	}
 
-	if (this.rawAudioData) {
-		audioContext.decodeAudioData(this.rawAudioData, onAudioDecodeSuccess, onAudioDecodeFail);
-	}
+	audioContext.decodeAudioData(this.rawAudioData, onAudioDecodeSuccess, onAudioDecodeFail);
 };
 
 
@@ -210,14 +212,14 @@ SoundBuffered.prototype.unload = function () {
 			this._stopAndClear();
 		}
 		this.buffer = null;
-		this.gain.setTargetAtTime(0, this.audioContext.currentTime, 0);
+		// this.gain.setTargetAtTime(0, this.audioContext.currentTime, 0);
 		if (this.source) {
 			this.source.onended = null;
 			this.source.stop(0);
 			this.source = null;
 		}
+		this._destroyAudioNodes();
 	}
-	this._destroyAudioNodes();
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -274,6 +276,7 @@ SoundBuffered.prototype._play = function (pitch) {
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 SoundBuffered.prototype._stopAndClear = function () {
+	this.stopping = false;
 	this.source.onended = null;
 	this.source.stop(0);
 	this.source = null;
@@ -294,12 +297,13 @@ SoundBuffered.prototype._stopAndClear = function () {
  */
 SoundBuffered.prototype.stop = function (cb) {
 	var fadeOutRatio = this.audioManager.settings.fadeOutRatio;
-	if (!this.playing) return cb && cb();
+	if (!this.playing && !this.stopping) return cb && cb();
 	this._playTriggered = 0;
-	this.playing = false;
+	this.stopping = true;
+	this.playing  = false;
 	if (!this.source) return cb && cb();
 
-	this._onStopCallback = cb;
+	this._onStopCallback = cb; // TODO: do we allow multiple stop cb ?
 
 	if (this._fadeTimeout) return;
 
