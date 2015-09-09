@@ -156,17 +156,15 @@ SoundBuffered.prototype._setPlaybackRate = function (portamento) {
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Load sound
  * @private
- *
- * @param {String} filePath - audio file to be loaded
  */
-SoundBuffered.prototype._load = function (filePath) {
+SoundBuffered.prototype._load = function () {
 	var self = this;
 
 	this._createAudioNodes();
 
-	function loadFail() {
+	function loadFail(error) {
 		// TODO: keep track that loading has failed so we don't retry to load it ?
-		self._finalizeLoad('Sound could not be loaded.');
+		self._finalizeLoad(error);
 	}
 
 	function onAudioLoaded(buffer) {
@@ -183,7 +181,7 @@ SoundBuffered.prototype._load = function (filePath) {
 		xobj.onreadystatechange = function onXhrStateChange() {
 			if (~~xobj.readyState !== 4) return;
 			if (~~xobj.status !== 200 && ~~xobj.status !== 0) {
-				return loadFail();
+				return loadFail('xhrError:' + xobj.status);
 			}
 			if (self.audioContext) {
 				self.audioContext.decodeAudioData(xobj.response, onAudioLoaded, loadFail);
@@ -192,14 +190,29 @@ SoundBuffered.prototype._load = function (filePath) {
 				self._finalizeLoad(null);
 			}
 		};
+
 		xobj.open('GET', uri, true);
 		xobj.send();
 	}
 
-	if (window.wizAssets) {
-		window.wizAssets.downloadFile(filePath, this._src, loadAudio, loadFail);
+	var getFileUri = this.audioManager.settings.getFileUri;
+	var audioPath  = this.audioManager.settings.audioPath;
+
+	if (getFileUri.length > 2) {
+		// asynchronous
+		getFileUri(audioPath, this.id, function onUri(error, uri) {
+			if (error) return loadFail(error);
+			loadAudio(uri);
+		});
 	} else {
-		loadAudio(filePath);
+		// synchronous
+		try {
+			var uri = getFileUri(audioPath, this.id);
+			if (!uri) return loadFail('emptyUri');
+			loadAudio(uri);
+		} catch (error) {
+			loadFail(error);
+		}
 	}
 };
 
@@ -233,8 +246,8 @@ SoundBuffered.prototype._play = function (pitch) {
 	}
 
 	// prevent a looped sound to play twice
+	// TODO: add a flag to allow force restart
 	if (this.loop && this.playing) {
-		// TODO: restart sound from beginning
 		// update pitch if needed
 		if ((pitch || pitch === 0) && pitch !== this._playPitch) {
 			this._playPitch = pitch;
@@ -243,14 +256,18 @@ SoundBuffered.prototype._play = function (pitch) {
 		return;
 	}
 
-	// if sound is still fading out, we stop and clear it before restarting it
-	if (this._fadeTimeout) {
-		this._onStopCallback = null;
-		this._stopAndClear();
-	}
-
 	this.playing = true;
 	this.gain.setTargetAtTime(this.volume, this.audioContext.currentTime, this.fade);
+
+	// if sound is still fading out, clear all onStop callback
+	if (this._fadeTimeout) {
+		this._onStopCallback = null;
+		this.stopping = false;
+		this.source.onended = null;
+		window.clearTimeout(this._fadeTimeout);
+		this._fadeTimeout = null;
+		return;
+	}
 
 	var sourceNode = this.source = this.audioContext.createBufferSource();
 	sourceNode.connect(this.sourceConnector);

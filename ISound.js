@@ -15,14 +15,13 @@ function ISound() {
 
 	// the following properties are public but should NOT be assigned directly.
 	// instead, use the setter functions: setId, setVolume, setPan, setLoop, setPitch.
-	this.id              = 0;
+	this.id              = null;
 	this.volume          = 1.0;
 	this.pan             = 0.0;
 	this.loop            = false;
 	this.pitch           = 0.0;
 
 	// private properties
-	this._src            = '';
 	this._loaded         = false;
 	this._loading        = false;
 	this._unloading      = false;
@@ -38,9 +37,7 @@ ISound.prototype.init = function () { /* virtual function */ };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 ISound.prototype.setId = function (value) {
-	var audioPath = this.audioManager.settings.audioPath;
 	this.id      = value;
-	this._src    = audioPath + value + '.mp3';
 	this._loaded = false;
 };
 
@@ -67,11 +64,9 @@ ISound.prototype.setPitch = function (pitch) {
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Load sound. Abstract method to be overwritten
  * @private
- *
- * @param {String} filePath - audio file to be loaded
  */
-ISound.prototype._load = function (filePath) {
-	console.log('ISound load call: ' + filePath);
+ISound.prototype._load = function () {
+	console.log('ISound load call: ' + this.id);
 	return this._finalizeLoad(null);
 };
 
@@ -88,8 +83,7 @@ ISound.prototype.load = function (cb) {
 	if (this._loading) return;
 	this._loading = true;
 
-	var filePath = this.audioManager.settings.assetSeverUrl + this._src;
-	return this._load(filePath, this);
+	return this._load();
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -137,8 +131,7 @@ ISound.prototype.unload = function () {
 	this.audioManager.usedMemory -= this.usedMemory;
 	this.setVolume(1.0);
 	this.setPan(0.0);
-	this.id         = 0;
-	this._src       = '';
+	this.id         = null;
 	this._loaded    = false;
 	this.usedMemory = 0;
 
@@ -176,7 +169,7 @@ ISound.prototype.play = function (vol, pan, pitch) {
 /** Play sound. Abstract method to be overwritten */
 ISound.prototype._play = function () {
 	this.playing = true;
-	console.log('ISound play call: "' + this._src + '"');
+	console.log('ISound play call: "' + this.id + '"');
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄

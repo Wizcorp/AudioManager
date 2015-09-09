@@ -2,7 +2,6 @@
 Play sounds using Web Audio, fallback on HTML5 Audio.
 `AudioManager` is specifically designed to works for games that have a big
 quantity of audio assets. Loading and unloading is made easy and transparent.
-If available, WizAsset is used for downloading files to disc.
 
 # API
 
@@ -151,3 +150,41 @@ audioManager.settings.crossFade   = true; // default is false
 ```javascript
 audioManager.release();
 ```
+
+### Custom loader function
+`audioManager.settings.getFileUri` can be overriden if you want more control on how to 
+resolve files uri from sound id. The function have one on the following synchronous or
+asynchronous profile:
+
+```javascript
+function getFileUriSync(audioPath, id) {
+	var uri;
+	// ...
+	return uri;
+}
+```
+
+```javascript
+function getFileUriAsync(audioPath, id, callback) {
+	var uri;
+	var error = null;
+	// ...
+	return callback(error, uri);
+}
+```
+
+For instance, here's how you can add [wizAssets](https://github.com/Wizcorp/phonegap-plugin-wizAssets)
+to cache files on disc in a PhoneGap application:
+```javascript
+if (window.wizAssets) {
+    audioManager.settings.getFileUri = function wizAssetsGetUri(audioPath, id, cb) {
+        window.wizAssets.downloadFile(audioPath + id + '.mp3', 'audio/' + id + '.mp3', 
+            function onSuccess(uri) {
+                cb(null, uri)
+            }, 
+            cb // onFail callback
+        );
+    }
+}
+```
+
