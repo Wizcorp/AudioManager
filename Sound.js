@@ -43,9 +43,9 @@ Sound.prototype.setLoop = function (value) {
 Sound.prototype._load = function () {
 	var self = this;
 
-	function loadFail() {
+	function loadFail(error) {
 		// TODO: keep track that loading has failed to not retry to loading it
-		self._finalizeLoad('Sound could not be loaded.');
+		self._finalizeLoad(error);
 	}
 
 	function onAudioLoaded() {
@@ -56,10 +56,10 @@ Sound.prototype._load = function () {
 		self._finalizeLoad(null);
 	}
 
-	function onAudioError() {
+	function onAudioError(error) {
 		this.removeEventListener('canplaythrough', onAudioLoaded);
 		this.removeEventListener('error', onAudioError);
-		loadFail();
+		loadFail(error);
 	}
 
 	function loadAudio(uri) {

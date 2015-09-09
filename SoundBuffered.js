@@ -181,7 +181,7 @@ SoundBuffered.prototype._load = function () {
 		xobj.onreadystatechange = function onXhrStateChange() {
 			if (~~xobj.readyState !== 4) return;
 			if (~~xobj.status !== 200 && ~~xobj.status !== 0) {
-				return loadFail();
+				return loadFail('xhrError:' + xobj.status);
 			}
 			if (self.audioContext) {
 				self.audioContext.decodeAudioData(xobj.response, onAudioLoaded, loadFail);
