@@ -44,13 +44,13 @@ function AudioManager(channels) {
 	// settings
 	this.settings = {
 		audioPath:      '',   // path to audio assets folder
-		assetSeverUrl:  '',   // asset server url
 		maxSoundGroup:  500,
 		maxUsedMemory:  300,  // seconds
 		defaultFade:    2,    // seconds
 		maxPlayLatency: 1000, // milliseconds
 		fadeOutRatio:   0.4,
-		crossFading:    false
+		crossFading:    false,
+		getFileUri:     function getFileUri(audioPath, id) { return audioPath + id + '.mp3'; }
 	};
 
 	// create channels
@@ -268,8 +268,8 @@ AudioManager.prototype.playLoopSound = function (channelId, soundId, volume, pan
 	var defaultFade    = this.settings.defaultFade;
 	var crossFading    = this.settings.crossFading;
 	var channel        = this.channels[channelId];
-	var currentSoundId = channel.loopId;
 	var currentSound   = channel.loopSound;
+	var currentSoundId = currentSound && currentSound.id;
 
 	volume = Math.max(0, Math.min(1, volume || 1));
 
@@ -280,7 +280,7 @@ AudioManager.prototype.playLoopSound = function (channelId, soundId, volume, pan
 	if (channel.muted) return;
 
 	// if requested sound is already playing, update volume, pan and pitch
-	if (soundId === currentSoundId && currentSound && currentSound.playing) {
+	if (soundId === currentSoundId && currentSound && (currentSound.playing || currentSound.stopping)) {
 		currentSound.play(volume * channel.volume, pan, pitch);
 		if (channel.nextLoop) {
 			channel.nextLoop.cancelOnLoadCallbacks();

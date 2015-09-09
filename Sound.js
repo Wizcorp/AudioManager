@@ -39,10 +39,8 @@ Sound.prototype.setLoop = function (value) {
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Load sound
  * @private
- *
- * @param {String} filePath - audio file to be loaded
  */
-Sound.prototype._load = function (filePath) {
+Sound.prototype._load = function () {
 	var self = this;
 
 	function loadFail() {
@@ -72,10 +70,24 @@ Sound.prototype._load = function (filePath) {
 		self._audio.load();
 	}
 
-	if (window.wizAssets) {
-		window.wizAssets.downloadFile(filePath, this._src, loadAudio, loadFail);
+	var getFileUri = this.audioManager.settings.getFileUri;
+	var audioPath  = this.audioManager.settings.audioPath;
+
+	if (getFileUri.length > 2) {
+		// asynchronous
+		getFileUri(audioPath, this.id, function onUri(error, uri) {
+			if (error) return loadFail(error);
+			loadAudio(uri);
+		});
 	} else {
-		loadAudio(filePath);
+		// synchronous
+		try {
+			var uri = getFileUri(audioPath, this.id);
+			// TODO: check uri existence
+			loadAudio(uri);
+		} catch (error) {
+			loadFail(error);
+		}
 	}
 };
 
