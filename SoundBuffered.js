@@ -208,7 +208,7 @@ SoundBuffered.prototype._load = function () {
 		// synchronous
 		try {
 			var uri = getFileUri(audioPath, this.id);
-			// TODO: check uri existence
+			if (!uri) return loadFail('emptyUri');
 			loadAudio(uri);
 		} catch (error) {
 			loadFail(error);
