@@ -114,6 +114,7 @@ SoundBuffered.prototype.setVolume = function (value) {
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 SoundBuffered.prototype.setPan = function (value) {
 	this.pan = value;
+	if (!this.panNode) return;
 	if (this.panNode.pan) {
 		// stereo panning
 		this.panNode.pan.value = value;
