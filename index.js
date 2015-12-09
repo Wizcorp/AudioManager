@@ -40,6 +40,7 @@ function AudioManager(channels) {
 	this.usedMemory            = 0;
 	this.channels              = {};
 	this.audioContext          = null;
+	this._muted                = false;
 
 	// settings
 	this.settings = {
@@ -121,7 +122,11 @@ AudioManager.prototype.setVolume = function (channelId, volume, muted) {
 	if (!channel) return;
 	var wasChannelMuted = channel.muted;
 	channel.muted  = volume === 0 || muted || false;
-	channel.volume = volume;
+	if (volume !== undefined && volume !== null) {
+		channel.volume = volume;
+	} else {
+		volume = channel.volume;
+	}
 
 	if (!channel.loopId) return;
 
@@ -131,13 +136,26 @@ AudioManager.prototype.setVolume = function (channelId, volume, muted) {
 		// a sound was playing, channel becomes muted
 		channel.loopSound.stop();
 		// TODO: unload sound ?
-	} else if (channel.loopSound) {
-		// a sound is loaded in channel, updating volume & playback
+	} else if (channel.loopSound && channel.loopSound.id === channel.loopId) {
+		// correct sound is loaded in channel, updating volume & playback
 		channel.loopSound.setVolume(Math.max(0, Math.min(1, volume * channel.loopVol)));
 		if (wasChannelMuted) { channel.loopSound.play(); }
 	} else if (!channel.muted) {
-		// no sounds are loaded in channel, channel is unmutted
+		// sound is not loaded in channel, channel has been unmutted
 		this.playLoopSound(channelId, channel.loopId, channel.loopVol);
+	}
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+/** Mute / unmute all channels
+ *
+ * @param {boolean} [muted] - Should all channels be muted. If not specified, function will behave as toggle
+ */
+AudioManager.prototype.muteAll = function (muted) {
+	if (muted === undefined) muted = !this._muted;
+	this._muted = !!muted;
+	for (var channelId in this.channels) {
+		this.setVolume(channelId, null, this._muted);
 	}
 };
 
