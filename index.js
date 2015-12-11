@@ -2,6 +2,7 @@ var AudioContext = window.AudioContext || window.webkitAudioContext;
 var OrderedList  = require('./OrderedList');
 var SoundObject  = require('./SoundBuffered.js');
 var SoundGroup   = require('./SoundGroup.js');
+var AudioChannel = require('./AudioChannel.js');
 
 if (!AudioContext) {
 	console.warn('Web Audio API is not supported on this platform. Fallback to regular HTML5 <Audio>');
@@ -12,15 +13,6 @@ if (!AudioContext) {
 	}
 }
 
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-function AudioChannel() {
-	this.volume    = 1.0;
-	this.muted     = true;
-	this.loopSound = null;
-	this.loopId    = null;
-	this.loopVol   = 0.0;
-	this.nextLoop  = null;
-}
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Audio manager
@@ -56,12 +48,14 @@ function AudioManager(channels) {
 
 	// create channels
 	for (var i = 0; i < channels.length; i++) {
-		this.channels[channels[i]] = new AudioChannel();
+		var channelId = channels[i];
+		this.channels[channelId] = new AudioChannel(channelId);
 	}
 
 	// register self
-	SoundObject.prototype.audioManager = this;
-	SoundGroup.prototype.audioManager  = this;
+	SoundObject.prototype.audioManager  = this;
+	SoundGroup.prototype.audioManager   = this;
+	AudioChannel.prototype.audioManager = this;
 }
 
 module.exports = AudioManager;
@@ -120,30 +114,7 @@ AudioManager.prototype.setup = function (channels) {
 AudioManager.prototype.setVolume = function (channelId, volume, muted) {
 	var channel = this.channels[channelId];
 	if (!channel) return;
-	var wasChannelMuted = channel.muted;
-	channel.muted  = volume === 0 || muted || false;
-	if (volume !== undefined && volume !== null) {
-		channel.volume = volume;
-	} else {
-		volume = channel.volume;
-	}
-
-	if (!channel.loopId) return;
-
-	// this is a channel with looped sound (music, ambient sfx)
-	// we have to take care of this looped sound playback if channel state changed
-	if (channel.loopSound && channel.muted) {
-		// a sound was playing, channel becomes muted
-		channel.loopSound.stop();
-		// TODO: unload sound ?
-	} else if (channel.loopSound && channel.loopSound.id === channel.loopId) {
-		// correct sound is loaded in channel, updating volume & playback
-		channel.loopSound.setVolume(Math.max(0, Math.min(1, volume * channel.loopVol)));
-		if (wasChannelMuted) { channel.loopSound.play(); }
-	} else if (!channel.muted) {
-		// sound is not loaded in channel, channel has been unmutted
-		this.playLoopSound(channelId, channel.loopId, channel.loopVol);
-	}
+	channel.setVolume(volume, muted);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -151,11 +122,11 @@ AudioManager.prototype.setVolume = function (channelId, volume, muted) {
  *
  * @param {boolean} [muted] - Should all channels be muted. If not specified, function will behave as toggle
  */
-AudioManager.prototype.muteAll = function (muted) {
+AudioManager.prototype.setMute = function (muted) {
 	if (muted === undefined) muted = !this._muted;
 	this._muted = !!muted;
 	for (var channelId in this.channels) {
-		this.setVolume(channelId, null, this._muted);
+		this.channels[channelId].setMute(this._muted);
 	}
 };
 
@@ -283,7 +254,10 @@ AudioManager.prototype.freeSound = function (sound) {
  * @param {number} [pitch]   - optional pitch, in semi-tone
  */
 AudioManager.prototype.playLoopSound = function (channelId, soundId, volume, pan, pitch) {
-	var defaultFade    = this.settings.defaultFade;
+	var channel = this.channels[channelId];
+	if (!channel) return console.warn('Channel id "' + channelId + '" does not exist.');
+	channel.playLoopSound(soundId, volume, pan, pitch);
+	/*var defaultFade    = this.settings.defaultFade;
 	var crossFading    = this.settings.crossFading;
 	var channel        = this.channels[channelId];
 	var currentSound   = channel.loopSound;
@@ -345,7 +319,7 @@ AudioManager.prototype.playLoopSound = function (channelId, soundId, volume, pan
 	} else {
 		channel.nextLoop = this.createSound(soundId);
 		stopCurrentLoop(channel.loopSound, playNextSound);
-	}
+	}*/
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
