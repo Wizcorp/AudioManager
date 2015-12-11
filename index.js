@@ -257,69 +257,6 @@ AudioManager.prototype.playLoopSound = function (channelId, soundId, volume, pan
 	var channel = this.channels[channelId];
 	if (!channel) return console.warn('Channel id "' + channelId + '" does not exist.');
 	channel.playLoopSound(soundId, volume, pan, pitch);
-	/*var defaultFade    = this.settings.defaultFade;
-	var crossFading    = this.settings.crossFading;
-	var channel        = this.channels[channelId];
-	var currentSound   = channel.loopSound;
-	var currentSoundId = currentSound && currentSound.id;
-
-	volume = Math.max(0, Math.min(1, volume || 1));
-
-	channel.loopId  = soundId;
-	channel.loopVol = volume;
-
-	// don't load or play sound if channel is mutted
-	if (channel.muted) return;
-
-	// if requested sound is already playing, update volume, pan and pitch
-	if (soundId === currentSoundId && currentSound && (currentSound.playing || currentSound.stopping)) {
-		currentSound.play(volume * channel.volume, pan, pitch);
-		if (channel.nextLoop) {
-			channel.nextLoop.cancelOnLoadCallbacks();
-			channel.nextLoop = null;
-		}
-		return;
-	}
-
-	// check if requested sound is already scheduled to play next
-	if (channel.nextLoop && channel.nextLoop.id === soundId) return;
-
-	var self = this;
-
-	function stopCurrentLoop(sound, cb) {
-		if (!sound) return cb && cb();
-		if (sound.stopping) return; // callback is already scheduled
-		sound.stop(function () {
-			self.freeSound(sound); // TODO: add an option to keep file in memory
-			return cb && cb();
-		});
-	}
-
-	function playNextSound() {
-		var sound = channel.loopSound = channel.nextLoop;
-		channel.nextLoop = null;
-		if (!sound) return;
-		sound.setLoop(true);
-		sound.fade = defaultFade;
-		sound.play(volume * channel.volume, pan, pitch); // load and play
-	}
-
-	if (crossFading) {
-		if (channel.nextLoop) {
-			// if another nextSound already loading, cancel previous callback
-			channel.nextLoop.cancelOnLoadCallbacks();
-		}
-		channel.nextLoop = this.createSound(soundId);
-		channel.nextLoop.load(function onSoundLoad(error) {
-			if (error) return;
-			stopCurrentLoop(channel.loopSound);
-			playNextSound();
-		});
-
-	} else {
-		channel.nextLoop = this.createSound(soundId);
-		stopCurrentLoop(channel.loopSound, playNextSound);
-	}*/
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
