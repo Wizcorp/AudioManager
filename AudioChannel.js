@@ -1,0 +1,126 @@
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+/** Audio Channel class.
+ *
+ * @author  Cedric Stoquer
+ *
+ *
+ * @param {string} id - channel name id
+ */
+function AudioChannel(id) {
+	this.id        = id;
+	this.volume    = 1.0;
+	this.muted     = true;
+	this.loopSound = null;
+	this.loopId    = null;
+	this.loopVol   = 0.0;
+	this.nextLoop  = null;
+}
+
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+AudioChannel.prototype.setVolume = function (volume, muted) {
+	var wasChannelMuted = this.muted;
+	this.muted  = volume === 0 || muted || false;
+	if (volume !== undefined && volume !== null) {
+		this.volume = volume;
+	} else {
+		volume = this.volume;
+	}
+
+	if (!this.loopId) return;
+
+	// this channel have a looped sound (music, ambient sfx)
+	// we have to take care of this looped sound playback if channel state changed
+	if (this.loopSound && this.muted) {
+		// a sound was playing, channel becomes muted
+		this.loopSound.stop();
+		// TODO: unload sound ?
+	} else if (this.loopSound && this.loopSound.id === this.loopId) {
+		// correct sound is loaded in channel, updating volume & playback
+		this.loopSound.setVolume(Math.max(0, Math.min(1, volume * this.loopVol)));
+		if (wasChannelMuted) { this.loopSound.play(); }
+	} else if (!this.muted) {
+		// sound is not loaded in channel, channel has been unmutted
+		this.audioManager.playLoopSound(this.id, this.loopId, this.loopVol);
+	}
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+AudioChannel.prototype.setMute = function (mute) {
+	this.setVolume(null, mute);
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+/** Play a long looped sound (e.g. background music).
+ *  Only one looped sound can play per channel.
+ *
+ * @param {string} soundId   - sound id
+ * @param {number} [volume]  - optional volume, a integer in range ]0..1]
+ * @param {number} [pan]     - optional panoramic, a integer in rage [-1..1]
+ * @param {number} [pitch]   - optional pitch, in semi-tone
+ */
+AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
+	var audioManager   = this.audioManager;
+	var defaultFade    = audioManager.settings.defaultFade;
+	var crossFading    = audioManager.settings.crossFading;
+	var currentSound   = this.loopSound;
+	var currentSoundId = currentSound && currentSound.id;
+
+	volume = Math.max(0, Math.min(1, volume || 1));
+
+	this.loopId  = soundId;
+	this.loopVol = volume;
+
+	// don't load or play sound if channel is mutted
+	if (this.muted) return;
+
+	// if requested sound is already playing, update volume, pan and pitch
+	if (soundId === currentSoundId && currentSound && (currentSound.playing || currentSound.stopping)) {
+		currentSound.play(volume * this.volume, pan, pitch);
+		if (this.nextLoop) {
+			this.nextLoop.cancelOnLoadCallbacks();
+			this.nextLoop = null;
+		}
+		return;
+	}
+
+	// check if requested sound is already scheduled to play next
+	if (this.nextLoop && this.nextLoop.id === soundId) return;
+
+	var self = this;
+
+	function stopCurrentLoop(sound, cb) {
+		if (!sound) return cb && cb();
+		if (sound.stopping) return; // callback is already scheduled
+		sound.stop(function () {
+			audioManager.freeSound(sound); // TODO: add an option to keep file in memory
+			return cb && cb();
+		});
+	}
+
+	function playNextSound() {
+		var sound = self.loopSound = self.nextLoop;
+		self.nextLoop = null;
+		if (!sound) return;
+		sound.setLoop(true);
+		sound.fade = defaultFade;
+		sound.play(volume * self.volume, pan, pitch); // load and play
+	}
+
+	if (crossFading) {
+		if (this.nextLoop) {
+			// if another nextSound already loading, cancel previous callback
+			this.nextLoop.cancelOnLoadCallbacks();
+		}
+		this.nextLoop = audioManager.createSound(soundId);
+		this.nextLoop.load(function onSoundLoad(error) {
+			if (error) return;
+			stopCurrentLoop(this.loopSound);
+			playNextSound();
+		});
+
+	} else {
+		this.nextLoop = audioManager.createSound(soundId);
+		stopCurrentLoop(this.loopSound, playNextSound);
+	}
+};

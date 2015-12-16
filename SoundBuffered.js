@@ -60,6 +60,8 @@ SoundBuffered.prototype._createAudioNodes = function () {
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 SoundBuffered.prototype._destroyAudioNodes = function () {
+	if (!this._audioNodeReady) return;
+
 	var audioContext = this.audioContext;
 	var panNode      = this.panNode;
 	var gainNode     = this.sourceConnector;
