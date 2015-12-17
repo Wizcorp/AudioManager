@@ -1,6 +1,6 @@
 {
   "name": "audio-manager",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Play sounds using Web Audio, fallback to HTML5 Audio",
   "main": "index.js",
   "scripts": {
