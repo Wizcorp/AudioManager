@@ -112,7 +112,9 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 	}
 
 	function playNextSound() {
-		// force loading to happen at next tic in order to let Garbage Collector to release previous audio.
+		// remove reference to current loop sound to ease optimistic garbabe collection
+		self.loopSound = null;
+		// force loading to happen at next tic in order to let garbage collector to release previous audio.
 		window.setTimeout(_playNextSound, 0);
 	}
 
@@ -125,7 +127,6 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 		this.nextLoop.load(function onSoundLoad(error) {
 			if (error) return;
 			stopCurrentLoop(this.loopSound);
-			this.loopSound = null;
 			playNextSound();
 		});
 
