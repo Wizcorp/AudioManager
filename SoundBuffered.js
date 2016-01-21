@@ -124,7 +124,7 @@ SoundBuffered.prototype.setVolume = function (value) {
 	}
 	// this.gain.setTargetAtTime(value, this.audioContext.currentTime, this.fade);
 	if (value <= 0) value = MIN_VALUE;
-	var currentTime = this.audioContext.currentTime
+	var currentTime = this.audioContext.currentTime;
 	this.gain.cancelScheduledValues(currentTime);
 	this.gain.setValueAtTime(this.gain.value || MIN_VALUE, currentTime);
 	this.gain.linearRampToValueAtTime(value, currentTime + this.fade);
