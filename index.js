@@ -41,7 +41,6 @@ function AudioManager(channels) {
 		maxUsedMemory:  300,  // seconds
 		defaultFade:    2,    // seconds
 		maxPlayLatency: 1000, // milliseconds
-		fadeOutRatio:   0.4,
 		crossFading:    false,
 		getFileUri:     function getFileUri(audioPath, id) { return audioPath + id + '.mp3'; }
 	};

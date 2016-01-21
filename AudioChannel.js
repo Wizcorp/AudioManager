@@ -85,6 +85,8 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 		return;
 	}
 
+	currentSound = null;
+
 	// check if requested sound is already scheduled to play next
 	if (this.nextLoop && this.nextLoop.id === soundId) return;
 
@@ -95,17 +97,25 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 		if (sound.stopping) return; // callback is already scheduled
 		sound.stop(function () {
 			audioManager.freeSound(sound); // TODO: add an option to keep file in memory
+			sound = null;
 			return cb && cb();
 		});
 	}
 
-	function playNextSound() {
+	function _playNextSound() {
 		var sound = self.loopSound = self.nextLoop;
 		self.nextLoop = null;
 		if (!sound) return;
 		sound.setLoop(true);
 		sound.fade = defaultFade;
 		sound.play(volume * self.volume, pan, pitch); // load and play
+	}
+
+	function playNextSound() {
+		// remove reference to current loop sound to ease optimistic garbabe collection
+		self.loopSound = null;
+		// force loading to happen at next tick in order to let garbage collector to release previous audio.
+		window.setTimeout(_playNextSound, 0);
 	}
 
 	if (crossFading) {
