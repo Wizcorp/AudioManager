@@ -122,7 +122,6 @@ SoundBuffered.prototype.setVolume = function (value) {
 		this.gain.value = value;
 		return;
 	}
-	// this.gain.setTargetAtTime(value, this.audioContext.currentTime, this.fade);
 	if (value <= 0) value = MIN_VALUE;
 	var currentTime = this.audioContext.currentTime;
 	this.gain.cancelScheduledValues(currentTime);
@@ -172,7 +171,6 @@ SoundBuffered.prototype._setPlaybackRate = function (portamento) {
 		this.source.playbackRate.value = rate;
 		return;
 	}
-	// this.source.playbackRate.setTargetAtTime(rate, this.audioContext.currentTime, portamento);
 	var currentTime = this.audioContext.currentTime;
 	this.source.playbackRate.cancelScheduledValues(currentTime);
 	this.source.playbackRate.setValueAtTime(this.source.playbackRate.value || MIN_VALUE, currentTime);
@@ -347,7 +345,6 @@ SoundBuffered.prototype._stopAndClear = function () {
  * @param {Function} [cb] - optional callback function
  */
 SoundBuffered.prototype.stop = function (cb) {
-	//var fadeOutRatio = this.audioManager.settings.fadeOutRatio;
 	if (!this.playing && !this.stopping) return cb && cb();
 	this._playTriggered = 0;
 	this.stopping = true;
