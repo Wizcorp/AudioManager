@@ -1,6 +1,14 @@
 var inherits = require('util').inherits;
 var ISound   = require('./ISound.js');
 
+// setValueAtTime, exponentialRampToValueAtTime and linearRampToValueAtTime thrown an exception if
+// provided value is less than or equal to 0.
+// we use MIN_VALUE instead of 0 when calling these functions
+// see:
+// http://webaudio.github.io/web-audio-api/#widl-AudioParam-exponentialRampToValueAtTime-void-float-value-double-endTime
+// http://stackoverflow.com/questions/29819382/how-does-the-audioparam-exponentialramptovalueattime-work
+var MIN_VALUE = 0.000001;
+
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Audio wrapper using AudioBufferSourceNode
  * @author  Cedric Stoquer
@@ -110,7 +118,16 @@ SoundBuffered.prototype.init = function () {
 SoundBuffered.prototype.setVolume = function (value) {
 	this.volume = value;
 	if (!this.playing) return;
-	this.gain.setTargetAtTime(value, this.audioContext.currentTime, this.fade);
+	if (!this.fade) {
+		this.gain.value = value;
+		return;
+	}
+	// this.gain.setTargetAtTime(value, this.audioContext.currentTime, this.fade);
+	if (value <= 0) value = MIN_VALUE;
+	var currentTime = this.audioContext.currentTime
+	this.gain.cancelScheduledValues(currentTime);
+	this.gain.setValueAtTime(this.gain.value || MIN_VALUE, currentTime);
+	this.gain.linearRampToValueAtTime(value, currentTime + this.fade);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -151,8 +168,15 @@ SoundBuffered.prototype.setPitch = function (pitch, portamento) {
 SoundBuffered.prototype._setPlaybackRate = function (portamento) {
 	if (!this.source) return;
 	var rate = Math.pow(2, (this._playPitch + this.pitch) / 12);
-	portamento = portamento || 0;
-	this.source.playbackRate.setTargetAtTime(rate, this.audioContext.currentTime, portamento);
+	if (!portamento) {
+		this.source.playbackRate.value = rate;
+		return;
+	}
+	// this.source.playbackRate.setTargetAtTime(rate, this.audioContext.currentTime, portamento);
+	var currentTime = this.audioContext.currentTime;
+	this.source.playbackRate.cancelScheduledValues(currentTime);
+	this.source.playbackRate.setValueAtTime(this.source.playbackRate.value || MIN_VALUE, currentTime);
+	this.source.playbackRate.linearRampToValueAtTime(rate, currentTime + portamento);
 };
 
 
@@ -228,7 +252,6 @@ SoundBuffered.prototype.unload = function () {
 			this._stopAndClear();
 		}
 		this.buffer = null;
-		// this.gain.setTargetAtTime(0, this.audioContext.currentTime, 0);
 		if (this.source) {
 			this.source.onended = null;
 			this.source.stop(0);
@@ -260,7 +283,15 @@ SoundBuffered.prototype._play = function (pitch) {
 	}
 
 	this.playing = true;
-	this.gain.setTargetAtTime(this.volume, this.audioContext.currentTime, this.fade);
+
+	var currentTime = this.audioContext.currentTime;
+	this.gain.cancelScheduledValues(currentTime);
+	if (this.fade) {
+		this.gain.setValueAtTime(this.gain.value || MIN_VALUE, currentTime);
+		this.gain.linearRampToValueAtTime(this.volume || MIN_VALUE, currentTime + this.fade);
+	} else {
+		this.gain.value = this.volume;
+	}
 
 	// if sound is still fading out, clear all onStop callback
 	if (this._fadeTimeout) {
@@ -316,7 +347,7 @@ SoundBuffered.prototype._stopAndClear = function () {
  * @param {Function} [cb] - optional callback function
  */
 SoundBuffered.prototype.stop = function (cb) {
-	var fadeOutRatio = this.audioManager.settings.fadeOutRatio;
+	//var fadeOutRatio = this.audioManager.settings.fadeOutRatio;
 	if (!this.playing && !this.stopping) return cb && cb();
 	this._playTriggered = 0;
 	this.stopping = true;
@@ -329,7 +360,10 @@ SoundBuffered.prototype.stop = function (cb) {
 
 	if (this.fade) {
 		var self = this;
-		this.gain.setTargetAtTime(0, this.audioContext.currentTime, this.fade * fadeOutRatio);
+		var currentTime = this.audioContext.currentTime;
+		this.gain.cancelScheduledValues(currentTime);
+		this.gain.setValueAtTime(this.gain.value || MIN_VALUE, currentTime);
+		this.gain.linearRampToValueAtTime(MIN_VALUE, currentTime + this.fade);
 		this._fadeTimeout = window.setTimeout(function onFadeEnd() {
 			self._fadeTimeout = null;
 			self._stopAndClear();
