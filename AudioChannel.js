@@ -99,13 +99,18 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 		});
 	}
 
-	function playNextSound() {
+	function _playNextSound() {
 		var sound = self.loopSound = self.nextLoop;
 		self.nextLoop = null;
 		if (!sound) return;
 		sound.setLoop(true);
 		sound.fade = defaultFade;
 		sound.play(volume * self.volume, pan, pitch); // load and play
+	}
+
+	function playNextSound() {
+		// force loading to happend in a new thread in order to let Garbage Collector to release previous audio.
+		window.setTimeout(_playNextSound, 10);
 	}
 
 	if (crossFading) {
