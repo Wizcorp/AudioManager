@@ -77,6 +77,12 @@ SoundBuffered.prototype._destroyAudioNodes = function () {
 	gainNode.disconnect(panNode);
 	panNode.disconnect(audioContext.destination);
 
+	if (this.source) {
+		this.source.disconnect(gainNode);
+		this.source.onended = null;
+		this.source = null;
+	}
+
 	this.sourceConnector = null;
 	this.gain            = null;
 	this.panNode         = null;
@@ -300,6 +306,8 @@ SoundBuffered.prototype._play = function (pitch) {
 		this._fadeTimeout = null;
 		return;
 	}
+
+	if (this.source) this.source.disconnect(this.sourceConnector);
 
 	var sourceNode = this.source = this.audioContext.createBufferSource();
 	sourceNode.connect(this.sourceConnector);
