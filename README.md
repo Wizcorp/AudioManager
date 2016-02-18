@@ -3,6 +3,8 @@ Play sounds using Web Audio, fallback on HTML5 Audio.
 `AudioManager` is specifically designed to works for games that have a big
 quantity of audio assets. Loading and unloading is made easy and transparent.
 
+[![Install with NPM](https://nodei.co/npm/audio-manager.png?downloads=true&stars=true)](https://nodei.co/npm/audio-manager/)
+
 # API
 
 ```javascript
