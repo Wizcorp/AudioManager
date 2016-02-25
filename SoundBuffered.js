@@ -56,9 +56,8 @@ SoundBuffered.prototype._createAudioNodes = function () {
 
 	gainNode.connect(panNode);
 	panNode.connect(audioContext.destination);
-	gainNode.gain.value        = 0;
-	gainNode.gain.defaultValue = 0;
 
+	gainNode.gain.value  = 0;
 	this.sourceConnector = gainNode;
 	this.gain            = gainNode.gain;
 	this.panNode         = panNode;
@@ -300,14 +299,17 @@ SoundBuffered.prototype._play = function (pitch) {
 	// if sound is still fading out, clear all onStop callback
 	if (this._fadeTimeout) {
 		this._onStopCallback = null;
-		this.stopping = false;
 		this.source.onended = null;
+		this.stopping = false;
 		window.clearTimeout(this._fadeTimeout);
 		this._fadeTimeout = null;
 		return;
 	}
 
-	if (this.source) this.source.disconnect(this.sourceConnector);
+	if (this.source) {
+		this.source.disconnect(this.sourceConnector);
+		this.source.onended = null;
+	}
 
 	var sourceNode = this.source = this.audioContext.createBufferSource();
 	sourceNode.connect(this.sourceConnector);
