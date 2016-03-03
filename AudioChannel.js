@@ -72,8 +72,8 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 	this.loopId  = soundId;
 	this.loopVol = volume;
 
-	// don't load or play sound if channel is mutted
-	if (this.muted) return;
+	// don't load or play sound if audio or channel is mutted
+	if (audioManager.muted || this.muted) return;
 
 	// if requested sound is already playing, update volume, pan and pitch
 	if (soundId === currentSoundId && currentSound && (currentSound.playing || currentSound.stopping)) {
