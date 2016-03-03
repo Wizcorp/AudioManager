@@ -32,7 +32,7 @@ function AudioManager(channels) {
 	this.usedMemory            = 0;
 	this.channels              = {};
 	this.audioContext          = null;
-	this._muted                = false;
+	this.muted                 = false;
 
 	// settings
 	this.settings = {
@@ -122,11 +122,8 @@ AudioManager.prototype.setVolume = function (channelId, volume, muted) {
  * @param {boolean} [muted] - Should all channels be muted. If not specified, function will behave as toggle
  */
 AudioManager.prototype.setMute = function (muted) {
-	if (muted === undefined) muted = !this._muted;
-	this._muted = !!muted;
-	for (var channelId in this.channels) {
-		this.channels[channelId].setMute(this._muted);
-	}
+	if (muted === undefined) muted = !this.muted;
+	this.muted = !!muted;
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -347,6 +344,7 @@ AudioManager.prototype.release = function () {
  * @param {number} [pitch]   - optional pitch value in semi-tone. Only work with webAudio enabled
  */
 AudioManager.prototype.playSound = function (channelId, soundId, volume, pan, pitch) {
+	if (this.muted) return;
 	var channel = this.channels[channelId];
 	if (channel.muted) return;
 	var sound = this.getSound(soundId);
@@ -364,6 +362,7 @@ AudioManager.prototype.playSound = function (channelId, soundId, volume, pan, pi
  * @param {number} [pan]        - optional panoramic value. pan:[-1..1]
  */
 AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, volume, pan, pitch) {
+	if (this.muted) return;
 	var channel = this.channels[channelId];
 	if (!channel || channel.muted) return;
 	var soundGroup = this.getSoundGroup(soundGroupId);
