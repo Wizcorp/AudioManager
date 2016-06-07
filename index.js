@@ -42,7 +42,7 @@ function AudioManager(channels) {
 		defaultFade:    2,    // seconds
 		maxPlayLatency: 1000, // milliseconds
 		crossFading:    false,
-		getFileUri:     function getFileUri(audioPath, id) { return audioPath + id + '.mp3'; }
+		getFileUri:     function getFileUri(audioPath, id) { return audioPath + id + '.mp3'; },
 		getSoundConstructor: function getSoundConstructor(channelId, soundId) { return null; }
 	};
 
