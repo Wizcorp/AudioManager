@@ -123,7 +123,7 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 			// if another nextSound already loading, cancel previous callback
 			this.nextLoop.cancelOnLoadCallbacks();
 		}
-		this.nextLoop = audioManager.createSound(soundId);
+		this.nextLoop = audioManager.createSound(soundId, this.id);
 		this.nextLoop.load(function onSoundLoad(error) {
 			if (error) return;
 			stopCurrentLoop(this.loopSound);
@@ -131,7 +131,7 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 		});
 
 	} else {
-		this.nextLoop = audioManager.createSound(soundId);
+		this.nextLoop = audioManager.createSound(soundId, this.id);
 		stopCurrentLoop(this.loopSound, playNextSound);
 	}
 };
