@@ -3,13 +3,14 @@ var OrderedList  = require('./OrderedList');
 var SoundObject  = require('./SoundBuffered.js');
 var SoundGroup   = require('./SoundGroup.js');
 var AudioChannel = require('./AudioChannel.js');
+var ISound       = require('./ISound.js');
 
 if (!AudioContext) {
 	console.warn('Web Audio API is not supported on this platform. Fallback to regular HTML5 <Audio>');
 	SoundObject = require('./Sound.js');
 	if (!window.Audio) {
 		console.warn('HTML5 <Audio> is not supported on this platform. Sound features are unavailable.');
-		SoundObject = require('./ISound.js');
+		SoundObject = ISound;
 	}
 }
 
@@ -53,7 +54,7 @@ function AudioManager(channels) {
 	}
 
 	// register self
-	SoundObject.prototype.audioManager  = this;
+	ISound.prototype.audioManager       = this;
 	SoundGroup.prototype.audioManager   = this;
 	AudioChannel.prototype.audioManager = this;
 }
@@ -61,7 +62,7 @@ function AudioManager(channels) {
 module.exports = AudioManager;
 
 // expose ISound for custom sound constructors
-module.exports.ISound = require('./ISound.js');
+module.exports.ISound = ISound;
 
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -93,7 +94,7 @@ AudioManager.prototype.getEmptySound = function (channelId, soundId) {
 	var sound;
 
 	// custom sound constructor
-	var constructor = this.settings.getSoundConstructor(channelId, id);
+	var constructor = this.settings.getSoundConstructor(channelId, soundId);
 	if (constructor) {
 		sound = new constructor();
 		return sound;
