@@ -105,7 +105,7 @@ Sound.prototype.unload = function () {
 /** Play sound. If sound is not yet loaded, it is loaded in memory and flagged to be played
  *  once loading has finished. If loading take too much time, playback may be cancelled.
  */
-Sound.prototype._play = function () {
+Sound.prototype._play = function (pitch) {
 	// TODO: sound pan
 	// TODO: fade-in
 	this._audio.volume = this.volume;

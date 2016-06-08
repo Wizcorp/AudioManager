@@ -24,7 +24,7 @@ function SoundBuffered() {
 	this.panNode         = null;
 	this.rawAudioData    = null;
 
-	this._playPitch      = 0.0;
+	this._playPitch      = 0.0;  // pitch for each independent play
 	this._fadeTimeout    = null;
 	this._onStopCallback = null;
 	this._audioNodeReady = false;
@@ -169,6 +169,14 @@ SoundBuffered.prototype.setPitch = function (pitch, portamento) {
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+SoundBuffered.prototype._updatePlayPitch = function (pitch) {
+	if ((pitch || pitch === 0) && pitch !== this._playPitch) {
+		this._playPitch = pitch;
+		this._setPlaybackRate(0);
+	}
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 SoundBuffered.prototype._setPlaybackRate = function (portamento) {
 	if (!this.source) return;
 	var rate = Math.pow(2, (this._playPitch + this.pitch) / 12);
@@ -271,17 +279,6 @@ SoundBuffered.prototype.unload = function () {
 SoundBuffered.prototype._play = function (pitch) {
 	if (!this.buffer) {
 		this._playTriggered = Date.now();
-		return;
-	}
-
-	// prevent a looped sound to play twice
-	// TODO: add a flag to allow force restart
-	if (this.loop && this.playing) {
-		// update pitch if needed
-		if ((pitch || pitch === 0) && pitch !== this._playPitch) {
-			this._playPitch = pitch;
-			this._setPlaybackRate(0);
-		}
 		return;
 	}
 

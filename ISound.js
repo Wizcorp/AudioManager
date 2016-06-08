@@ -62,6 +62,9 @@ ISound.prototype.setPitch = function (pitch) {
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+ISound.prototype._updatePlayPitch = function (pitch) { /* virtual */ };
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Load sound. Abstract method to be overwritten
  * @private
  */
@@ -162,12 +165,20 @@ ISound.prototype.play = function (vol, pan, pitch) {
 		return;
 	}
 
+	// prevent a looped sound to play twice
+	// TODO: add a flag to allow force restart
+	if (this.loop && this.playing) {
+		// update pitch if needed
+		this._updatePlayPitch(pitch);
+		return;
+	}
+
 	this._play(pitch);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Play sound. Abstract method to be overwritten */
-ISound.prototype._play = function () {
+ISound.prototype._play = function (pitch) {
 	this.playing = true;
 	console.log('ISound play call: "' + this.id + '"');
 };
