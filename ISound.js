@@ -33,44 +33,9 @@ function ISound() {
 module.exports = ISound;
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-ISound.prototype.init = function () { /* virtual function */ };
-
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 ISound.prototype.setId = function (value) {
 	this.id      = value;
 	this._loaded = false;
-};
-
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-ISound.prototype.setVolume = function (value) {
-	this.volume = value;
-};
-
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-ISound.prototype.setPan = function (value) {
-	this.pan = value;
-};
-
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-ISound.prototype.setLoop = function (value) {
-	this.loop = value;
-};
-
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-ISound.prototype.setPitch = function (pitch) {
-	this.pitch = pitch;
-};
-
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-ISound.prototype._updatePlayPitch = function (pitch) { /* virtual */ };
-
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-/** Load sound. Abstract method to be overwritten
- * @private
- */
-ISound.prototype._load = function () {
-	console.log('ISound load call: ' + this.id);
-	return this._finalizeLoad(null);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -118,30 +83,6 @@ ISound.prototype._finalizeLoad = function (error) {
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-/** Unload sound from memory */
-ISound.prototype.unload = function () {
-	this._playTriggered = 0;
-	this.setLoop(false);
-	this.fade  = 0;
-	this.pitch = 0;
-	this.stop();
-
-	if (this._loading) {
-		this._unloading = true;
-		return false;
-	}
-
-	this.audioManager.usedMemory -= this.usedMemory;
-	this.setVolume(1.0);
-	this.setPan(0.0);
-	this.id         = null;
-	this._loaded    = false;
-	this.usedMemory = 0;
-
-	return true;
-};
-
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Remove callback set on load */
 ISound.prototype.cancelOnLoadCallbacks = function () {
 	this._onLoadQueuedCallback = [];
@@ -176,6 +117,20 @@ ISound.prototype.play = function (vol, pan, pitch) {
 	this._play(pitch);
 };
 
+//█████████████████████████████████████████████████████████████████████████████████
+//████████████████████████████████████████▄███████▄░██████████▄░███████▄░██████████
+//█▀▄▄▄▄▀█▄░▄██▄░▄█▀▄▄▄▄▀█▄░▀▄▄▄█▄░▀▄▄▄█▄▄░███▀▄▄▄▀░██▀▄▄▄▄▀███░▀▄▄▄▀███░███▀▄▄▄▄▀█
+//█░████░███░██░███░▄▄▄▄▄██░██████░███████░███░████░██▀▄▄▄▄░███░████░███░███░▄▄▄▄▄█
+//█▄▀▀▀▀▄████░░████▄▀▀▀▀▀█▀░▀▀▀██▀░▀▀▀██▀▀░▀▀█▄▀▀▀▄░▀█▄▀▀▀▄░▀█▀░▄▀▀▀▄█▀▀░▀▀█▄▀▀▀▀▀█
+//█████████████████████████████████████████████████████████████████████████████████
+
+ISound.prototype.init      = function () { /* virtual function */ };
+ISound.prototype.setVolume = function (value) { this.volume = value; };
+ISound.prototype.setPan    = function (value) { this.pan    = value; };
+ISound.prototype.setLoop   = function (value) { this.loop   = value; };
+ISound.prototype.setPitch  = function (pitch) { this.pitch  = pitch; };
+ISound.prototype._updatePlayPitch = function (pitch) { /* virtual */ };
+
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Play sound. Abstract method to be overwritten */
 ISound.prototype._play = function (pitch) {
@@ -191,4 +146,37 @@ ISound.prototype._play = function (pitch) {
 ISound.prototype.stop = function (cb) {
 	this.playing = false;
 	return cb && cb();
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+/** Load sound. Abstract method to be overwritten
+ * @private
+ */
+ISound.prototype._load = function () {
+	console.log('ISound load call: ' + this.id);
+	return this._finalizeLoad(null);
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+/** Unload sound from memory */
+ISound.prototype.unload = function () {
+	this._playTriggered = 0;
+	this.setLoop(false);
+	this.fade  = 0;
+	this.pitch = 0;
+	this.stop();
+
+	if (this._loading) {
+		this._unloading = true;
+		return false;
+	}
+
+	this.audioManager.usedMemory -= this.usedMemory;
+	this.setVolume(1.0);
+	this.setPan(0.0);
+	this.id         = null;
+	this._loaded    = false;
+	this.usedMemory = 0;
+
+	return true;
 };
