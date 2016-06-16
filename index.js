@@ -3,13 +3,14 @@ var OrderedList  = require('./OrderedList');
 var SoundObject  = require('./SoundBuffered.js');
 var SoundGroup   = require('./SoundGroup.js');
 var AudioChannel = require('./AudioChannel.js');
+var ISound       = require('./ISound.js');
 
 if (!AudioContext) {
 	console.warn('Web Audio API is not supported on this platform. Fallback to regular HTML5 <Audio>');
 	SoundObject = require('./Sound.js');
 	if (!window.Audio) {
 		console.warn('HTML5 <Audio> is not supported on this platform. Sound features are unavailable.');
-		SoundObject = require('./ISound.js');
+		SoundObject = ISound;
 	}
 }
 
@@ -42,7 +43,8 @@ function AudioManager(channels) {
 		defaultFade:    2,    // seconds
 		maxPlayLatency: 1000, // milliseconds
 		crossFading:    false,
-		getFileUri:     function getFileUri(audioPath, id) { return audioPath + id + '.mp3'; }
+		getFileUri:     function getFileUri(audioPath, id) { return audioPath + id + '.mp3'; },
+		getSoundConstructor: function getSoundConstructor(channelId, soundId) { return null; }
 	};
 
 	// create channels
@@ -52,12 +54,15 @@ function AudioManager(channels) {
 	}
 
 	// register self
-	SoundObject.prototype.audioManager  = this;
+	ISound.prototype.audioManager       = this;
 	SoundGroup.prototype.audioManager   = this;
 	AudioChannel.prototype.audioManager = this;
 }
 
 module.exports = AudioManager;
+
+// expose ISound for custom sound constructors
+module.exports.ISound = ISound;
 
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -78,9 +83,23 @@ AudioManager.prototype.init = function () {
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-/** Get a unused sound object (or a new one if no more empty sounds are available in pool) */
-AudioManager.prototype.getEmptySound = function () {
+/** Get a unused sound object (or a new one if no more empty sounds are available in pool)
+ *
+ * @param {string} channelId - channel id where the sound will be used
+ * @param {string} soundId   - sound id
+ *
+ * @return {Object} sound object
+ */
+AudioManager.prototype.getEmptySound = function (channelId, soundId) {
 	var sound;
+
+	// custom sound constructor
+	var constructor = this.settings.getSoundConstructor(channelId, soundId);
+	if (constructor) {
+		sound = new constructor();
+		return sound;
+	}
+
 	if (this.freeSoundPool.length > 0) {
 		sound = this.freeSoundPool.pop();
 		sound.init();
@@ -143,10 +162,10 @@ AudioManager.prototype.loadSound = function (id, cb) {
  *
  * @param {number} id - sound id
  */
-AudioManager.prototype.createSound = function (id) {
+AudioManager.prototype.createSound = function (id, channelId) {
 	var sound = this.getSound(id);
 	if (sound) return sound;
-	sound = this.soundsById[id] = this.getEmptySound();
+	sound = this.soundsById[id] = this.getEmptySound(channelId, id);
 	sound.setId(id);
 	return sound;
 };
@@ -156,12 +175,14 @@ AudioManager.prototype.createSound = function (id) {
  *
  * @param {number} id - sound id
  */
-AudioManager.prototype.createSoundPermanent = function (id) {
+AudioManager.prototype.createSoundPermanent = function (id, channelId) {
 	var sound = this.getSound(id);
 	// TODO: Check if sound is permanent and move it to permanents list if it's not the case.
 	//       Because permanents sound (UI sounds) are created at app startup, this should not happend.
 	if (sound) return sound;
-	sound = this.permanentSounds[id] = new SoundObject();
+
+	var constructor = this.settings.getSoundConstructor(channelId, id) || SoundObject;
+	sound = this.permanentSounds[id] = new constructor();
 	sound.setId(id);
 	return sound;
 };
@@ -236,7 +257,9 @@ AudioManager.prototype.freeSound = function (sound) {
 		delete this.soundArchiveById[soundId];
 	}
 	sound.unload();
-	this.freeSoundPool.push(sound);
+
+	// don't add freed sound in pool if it's created from a custom constructor
+	if (sound instanceof SoundObject) this.freeSoundPool.push(sound);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -348,7 +371,7 @@ AudioManager.prototype.playSound = function (channelId, soundId, volume, pan, pi
 	var channel = this.channels[channelId];
 	if (channel.muted) return;
 	var sound = this.getSound(soundId);
-	if (!sound) { sound = this.createSound(soundId); }
+	if (!sound) { sound = this.createSound(soundId, channelId); }
 	volume = volume || 1.0;
 	sound.play(channel.volume * volume, pan, pitch);
 };

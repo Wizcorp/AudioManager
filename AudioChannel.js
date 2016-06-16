@@ -108,7 +108,14 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 		if (!sound) return;
 		sound.setLoop(true);
 		sound.fade = defaultFade;
-		sound.play(volume * self.volume, pan, pitch); // load and play
+		sound.load(function onSoundLoad(error) {
+			if (error) {
+				sound.unload();
+				self.loopSound = null;
+				return;
+			}
+			sound.play(volume * self.volume, pan, pitch);
+		});
 	}
 
 	function playNextSound() {
@@ -123,15 +130,19 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 			// if another nextSound already loading, cancel previous callback
 			this.nextLoop.cancelOnLoadCallbacks();
 		}
-		this.nextLoop = audioManager.createSound(soundId);
+		this.nextLoop = audioManager.createSound(soundId, this.id);
 		this.nextLoop.load(function onSoundLoad(error) {
-			if (error) return;
+			if (error) {
+				self.nextLoop.unload();
+				self.nextLoop = null;
+				return;
+			}
 			stopCurrentLoop(this.loopSound);
 			playNextSound();
 		});
 
 	} else {
-		this.nextLoop = audioManager.createSound(soundId);
+		this.nextLoop = audioManager.createSound(soundId, this.id);
 		stopCurrentLoop(this.loopSound, playNextSound);
 	}
 };
