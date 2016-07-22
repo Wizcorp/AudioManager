@@ -2,13 +2,18 @@
   "name": "audio-manager",
   "version": "0.1.14",
   "description": "Play sounds using Web Audio, fallback to HTML5 Audio",
-  "main": "index.js",
+  "main": "src/AudioManager.js",
   "scripts": {
+    "build": "browserify -t uglifyify src/build.js -o build/AudioManager.min.js && browserify src/build.js -o build/AudioManager.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/Wizcorp/AudioManager.git"
+  },
+  "devDependencies": {
+    "uglifyify": "~3.0.1",
+    "browserify": "~11.0.0"
   },
   "keywords": [
     "audio",
