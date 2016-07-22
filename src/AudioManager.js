@@ -402,7 +402,10 @@ AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, volum
  *        {String[]} soundGroupDef.id    - sound ids
  *        {number[]} soundGroupDef.vol   - sound volumes. vol:[0..1]
  *        {number[]} soundGroupDef.pitch - sound pitches in semi-tone.
- * @param {String|Boolean} [channelId]   - channel id the sound group will play in
+ * @param {String|Boolean} [channelId]   - Pass the channel id the sound group will play in
+ *                                         to determine if the sound will be loaded at creation.
+ *                                         Alternatively, a boolean can directly be provided to
+ *                                         set the soundGroup as muted when created.
  */
 AudioManager.prototype.createSoundGroup = function (soundGroupId, soundGroupDef, channelId) {
 	var muted;
