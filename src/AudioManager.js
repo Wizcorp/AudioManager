@@ -402,9 +402,17 @@ AudioManager.prototype.playSoundGroup = function (channelId, soundGroupId, volum
  *        {String[]} soundGroupDef.id    - sound ids
  *        {number[]} soundGroupDef.vol   - sound volumes. vol:[0..1]
  *        {number[]} soundGroupDef.pitch - sound pitches in semi-tone.
- * @param {String}  [muted]              - if muted, then sounds are created but not loaded
+ * @param {String|Boolean} [channelId]   - channel id the sound group will play in
  */
-AudioManager.prototype.createSoundGroup = function (soundGroupId, soundGroupDef, muted) {
+AudioManager.prototype.createSoundGroup = function (soundGroupId, soundGroupDef, channelId) {
+	var muted;
+	if (channelId === undefined || channelId === true || channelId === false) muted = !!channelId;
+	else muted = this.channels[channelId].muted;
+	this._createSoundGroup(soundGroupId, soundGroupDef, muted);
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+AudioManager.prototype._createSoundGroup = function (soundGroupId, soundGroupDef, muted) {
 	if (this.getSoundGroup(soundGroupId)) return;
 	var soundGroup = new SoundGroup(soundGroupId, soundGroupDef.id, soundGroupDef.vol, soundGroupDef.pitch, muted);
 	this.soundGroupsById[soundGroupId] = soundGroup;
@@ -417,11 +425,11 @@ AudioManager.prototype.createSoundGroup = function (soundGroupId, soundGroupDef,
  *        {String[]} soundGroupDefs[*].id    - sound ids
  *        {number[]} soundGroupDefs[*].vol   - sound volumes. vol:[0..1]
  *        {number[]} soundGroupDefs[*].pitch - sound pitches in semi-tone.
- * @param {String}  [channelId]              - channel id the sound group will play in
+ * @param {String}  [channelId]              - channel id the sound groups will play in
  */
 AudioManager.prototype.createSoundGroups = function (soundGroupDefs, channelId) {
 	var muted = channelId !== undefined ? this.channels[channelId].muted : false;
 	for (var soundGroupId in soundGroupDefs) {
-		this.createSoundGroup(soundGroupId, soundGroupDefs[soundGroupId], muted);
+		this._createSoundGroup(soundGroupId, soundGroupDefs[soundGroupId], channelId);
 	}
 };
