@@ -430,6 +430,6 @@ AudioManager.prototype._createSoundGroup = function (soundGroupId, soundGroupDef
 AudioManager.prototype.createSoundGroups = function (soundGroupDefs, channelId) {
 	var muted = channelId !== undefined ? this.channels[channelId].muted : false;
 	for (var soundGroupId in soundGroupDefs) {
-		this._createSoundGroup(soundGroupId, soundGroupDefs[soundGroupId], channelId);
+		this._createSoundGroup(soundGroupId, soundGroupDefs[soundGroupId], muted);
 	}
 };
