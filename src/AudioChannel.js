@@ -21,7 +21,7 @@ module.exports = AudioChannel;
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 AudioChannel.prototype.setVolume = function (volume, muted) {
 	var wasChannelMuted = this.muted;
-	this.muted  = volume === 0 || muted || false;
+	this.muted = volume === 0 || muted || false;
 	if (volume !== undefined && volume !== null) {
 		this.volume = volume;
 	} else {

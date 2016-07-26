@@ -143,6 +143,20 @@ AudioManager.prototype.setVolume = function (channelId, volume, muted) {
 AudioManager.prototype.setMute = function (muted) {
 	if (muted === undefined) muted = !this.muted;
 	this.muted = !!muted;
+
+	// take care of loop sounds in channels
+	for (var channelId in this.channels) {
+		var channel = this.channels[channelId];
+		if (!channel.loopSound) continue;
+		if (muted) {
+			channel.loopSound.stop();
+		} else {
+			// force channel.muted to change from true to its current value
+			var channelMuted = channel.muted;
+			channel.muted = true;
+			channel.setVolume(null, channelMuted);
+		}
+	}
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
