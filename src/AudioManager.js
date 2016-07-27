@@ -151,7 +151,7 @@ AudioManager.prototype.setMute = function (muted) {
 		if (muted) {
 			channel.loopSound.stop();
 		} else {
-			// force channel.muted to change from true to its current value
+			// FIXME: force channel.muted to change from true to its current value
 			var channelMuted = channel.muted;
 			channel.muted = true;
 			channel.setVolume(null, channelMuted);
