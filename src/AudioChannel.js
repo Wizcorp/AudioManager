@@ -137,7 +137,7 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 				self.nextLoop = null;
 				return;
 			}
-			stopCurrentLoop(this.loopSound);
+			stopCurrentLoop(self.loopSound);
 			playNextSound();
 		});
 
