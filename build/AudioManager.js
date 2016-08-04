@@ -820,7 +820,7 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 	if (audioManager.muted || this.muted) return;
 
 	// if requested sound is already playing, update volume, pan and pitch
-	if (soundId === currentSoundId && currentSound && (currentSound.playing || currentSound.stopping)) {
+	if (soundId === currentSoundId && currentSound) {
 		currentSound.play(volume * this.volume, pan, pitch);
 		if (this.nextLoop) {
 			this.nextLoop.cancelOnLoadCallbacks();
@@ -881,7 +881,7 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 				self.nextLoop = null;
 				return;
 			}
-			stopCurrentLoop(this.loopSound);
+			stopCurrentLoop(self.loopSound);
 			playNextSound();
 		});
 
@@ -1045,7 +1045,7 @@ AudioManager.prototype.setMute = function (muted) {
 		if (muted) {
 			channel.loopSound.stop();
 		} else {
-			// force channel.muted to change from true to its current value
+			// FIXME: force channel.muted to change from true to its current value
 			var channelMuted = channel.muted;
 			channel.muted = true;
 			channel.setVolume(null, channelMuted);
