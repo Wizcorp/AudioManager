@@ -76,7 +76,7 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 	if (audioManager.muted || this.muted) return;
 
 	// if requested sound is already playing, update volume, pan and pitch
-	if (soundId === currentSoundId && currentSound && (currentSound.playing || currentSound.stopping)) {
+	if (soundId === currentSoundId && currentSound) {
 		currentSound.play(volume * this.volume, pan, pitch);
 		if (this.nextLoop) {
 			this.nextLoop.cancelOnLoadCallbacks();
