@@ -124,6 +124,12 @@ AudioManager.prototype.setup = function (channels) {
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+AudioManager.prototype.addChannel = function (channelId) {
+	if (this.channels[channelId]) return;
+	this.channels[channelId] = new AudioChannel(channelId);
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Set channel's volume
  *
  * @param {String} channelId - channel id
@@ -286,10 +292,10 @@ AudioManager.prototype.freeSound = function (sound) {
  * @param {number} [pan]     - optional panoramic, a integer in rage [-1..1]
  * @param {number} [pitch]   - optional pitch, in semi-tone
  */
-AudioManager.prototype.playLoopSound = function (channelId, soundId, volume, pan, pitch) {
+AudioManager.prototype.playLoopSound = function (channelId, soundId, volume, pan, pitch, loopStart, loopEnd) {
 	var channel = this.channels[channelId];
 	if (!channel) return console.warn('Channel id "' + channelId + '" does not exist.');
-	channel.playLoopSound(soundId, volume, pan, pitch);
+	channel.playLoopSound(soundId, volume, pan, pitch, loopStart, loopEnd);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄

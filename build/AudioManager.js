@@ -804,7 +804,7 @@ AudioChannel.prototype.setMute = function (mute) {
  * @param {number} [pan]     - optional panoramic, a integer in rage [-1..1]
  * @param {number} [pitch]   - optional pitch, in semi-tone
  */
-AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
+AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch, loopStart, loopEnd) {
 	var audioManager   = this.audioManager;
 	var defaultFade    = audioManager.settings.defaultFade;
 	var crossFading    = audioManager.settings.crossFading;
@@ -850,7 +850,7 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 		var sound = self.loopSound = self.nextLoop;
 		self.nextLoop = null;
 		if (!sound) return;
-		sound.setLoop(true);
+		sound.setLoop(true, loopStart, loopEnd);
 		sound.fade = defaultFade;
 		sound.load(function onSoundLoad(error) {
 			if (error) {
@@ -1018,6 +1018,12 @@ AudioManager.prototype.setup = function (channels) {
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+AudioManager.prototype.addChannel = function (channelId) {
+	if (this.channels[channelId]) return;
+	this.channels[channelId] = new AudioChannel(channelId);
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Set channel's volume
  *
  * @param {String} channelId - channel id
@@ -1180,10 +1186,10 @@ AudioManager.prototype.freeSound = function (sound) {
  * @param {number} [pan]     - optional panoramic, a integer in rage [-1..1]
  * @param {number} [pitch]   - optional pitch, in semi-tone
  */
-AudioManager.prototype.playLoopSound = function (channelId, soundId, volume, pan, pitch) {
+AudioManager.prototype.playLoopSound = function (channelId, soundId, volume, pan, pitch, loopStart, loopEnd) {
 	var channel = this.channels[channelId];
 	if (!channel) return console.warn('Channel id "' + channelId + '" does not exist.');
-	channel.playLoopSound(soundId, volume, pan, pitch);
+	channel.playLoopSound(soundId, volume, pan, pitch, loopStart, loopEnd);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -1983,6 +1989,9 @@ function SoundBuffered() {
 	this._onStopCallback = null;
 	this._audioNodeReady = false;
 
+	this._loopStart      = 0;
+	this._loopEnd        = 0;
+
 	this.init();
 }
 inherits(SoundBuffered, ISound);
@@ -2102,13 +2111,26 @@ SoundBuffered.prototype.setPan = function (value) {
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-SoundBuffered.prototype.setLoop = function (value) {
-	this.loop = value;
-	if (this.source && this.buffer) {
-		this.source.loop      = value;
-		this.source.loopStart = 0;
-		this.source.loopEnd   = this.buffer.duration;
-	}
+SoundBuffered.prototype.setLoop = function (value, loopStart, loopEnd) {
+	this.loop       = !!value;
+	this._loopStart = loopStart || 0;
+	this._loopEnd   = loopEnd   || 0;
+	if (!this.source || !this.buffer) return;
+
+	this.source.loop = value;
+	this._setLoopPoints();
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+SoundBuffered.prototype._setLoopPoints = function () {
+	this.source.loopStart = this._loopStart || 0;
+
+	var loopEnd = this._loopEnd;
+
+	// When loop end point is negative, we set endPoint from the end of the buffer
+	if (loopEnd < 0) loopEnd = this.buffer.duration + loopEnd;
+	if (loopEnd < 0) loopEnd = 0;
+	this.source.loopEnd = loopEnd || this.buffer.duration;
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -2277,10 +2299,9 @@ SoundBuffered.prototype._play = function (pitch) {
 		this._setPlaybackRate(0);
 	}
 
-	sourceNode.loop      = this.loop;
-	sourceNode.buffer    = this.buffer;
-	sourceNode.loopStart = 0;
-	sourceNode.loopEnd   = this.buffer.duration;
+	sourceNode.loop   = this.loop;
+	sourceNode.buffer = this.buffer;
+	this._setLoopPoints();
 	sourceNode.start(0);
 };
 
