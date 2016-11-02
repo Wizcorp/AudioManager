@@ -29,6 +29,9 @@ function SoundBuffered() {
 	this._onStopCallback = null;
 	this._audioNodeReady = false;
 
+	this._loopStart      = 0;
+	this._loopEnd        = 0;
+
 	this.init();
 }
 inherits(SoundBuffered, ISound);
@@ -148,13 +151,26 @@ SoundBuffered.prototype.setPan = function (value) {
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-SoundBuffered.prototype.setLoop = function (value) {
-	this.loop = value;
-	if (this.source && this.buffer) {
-		this.source.loop      = value;
-		this.source.loopStart = 0;
-		this.source.loopEnd   = this.buffer.duration;
-	}
+SoundBuffered.prototype.setLoop = function (value, loopStart, loopEnd) {
+	this.loop       = !!value;
+	this._loopStart = loopStart || 0;
+	this._loopEnd   = loopEnd   || 0;
+	if (!this.source || !this.buffer) return;
+
+	this.source.loop = value;
+	this._setLoopPoints();
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+SoundBuffered.prototype._setLoopPoints = function () {
+	this.source.loopStart = this._loopStart || 0;
+
+	var loopEnd = this._loopEnd;
+
+	// When loop end point is negative, we set endPoint from the end of the buffer
+	if (loopEnd < 0) loopEnd = this.buffer.duration + loopEnd;
+	if (loopEnd < 0) loopEnd = 0;
+	this.source.loopEnd = loopEnd || this.buffer.duration;
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -323,10 +339,9 @@ SoundBuffered.prototype._play = function (pitch) {
 		this._setPlaybackRate(0);
 	}
 
-	sourceNode.loop      = this.loop;
-	sourceNode.buffer    = this.buffer;
-	sourceNode.loopStart = 0;
-	sourceNode.loopEnd   = this.buffer.duration;
+	sourceNode.loop   = this.loop;
+	sourceNode.buffer = this.buffer;
+	this._setLoopPoints();
 	sourceNode.start(0);
 };
 

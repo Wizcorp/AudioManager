@@ -60,7 +60,7 @@ AudioChannel.prototype.setMute = function (mute) {
  * @param {number} [pan]     - optional panoramic, a integer in rage [-1..1]
  * @param {number} [pitch]   - optional pitch, in semi-tone
  */
-AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
+AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch, loopStart, loopEnd) {
 	var audioManager   = this.audioManager;
 	var defaultFade    = audioManager.settings.defaultFade;
 	var crossFading    = audioManager.settings.crossFading;
@@ -106,7 +106,7 @@ AudioChannel.prototype.playLoopSound = function (soundId, volume, pan, pitch) {
 		var sound = self.loopSound = self.nextLoop;
 		self.nextLoop = null;
 		if (!sound) return;
-		sound.setLoop(true);
+		sound.setLoop(true, loopStart, loopEnd);
 		sound.fade = defaultFade;
 		sound.load(function onSoundLoad(error) {
 			if (error) {
