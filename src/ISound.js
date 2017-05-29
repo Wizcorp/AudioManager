@@ -12,6 +12,7 @@ function ISound() {
 	this.fade            = 0;
 	this.usedMemory      = 0;
 	this.poolRef         = null;
+	this.onEnd           = null;
 
 	// the following properties are public but should NOT be assigned directly.
 	// instead, use the setter functions: setId, setVolume, setPan, setLoop, setPitch.

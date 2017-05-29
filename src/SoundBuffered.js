@@ -332,6 +332,7 @@ SoundBuffered.prototype._play = function (pitch) {
 		self.playing       = false;
 		sourceNode.onended = null;
 		self.source        = null;
+		self.onEnd && self.onEnd();
 	};
 
 	this._playPitch = pitch || 0;
