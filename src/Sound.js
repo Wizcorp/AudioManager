@@ -15,6 +15,7 @@ function Sound() {
 	audio.loop  = false;
 	audio.type  = 'audio/mpeg';
 	this._audio = audio;
+	this._onEnd = null;
 
 	// if available, use webAudio for better performances
 	if (this.audioContext) {
@@ -113,6 +114,18 @@ Sound.prototype._play = function (pitch) {
 	this._audio.currentTime = 0;
 	this._audio.play(PLAY_OPTIONS);
 	this.playing = true;
+
+	// add timeout to determine when sound playback has ended
+	if (this.loop) return;
+	var duration = this._audio.duration * 1000;
+	if (isNaN(duration) || duration <= 0) return;
+
+	var self = this;
+	this._onEnd = window.setTimeout(function () {
+		self._onEnd   = null;
+		self._playing = false;
+		self.onEnd && self.onEnd();
+	}, duration);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -121,6 +134,12 @@ Sound.prototype._play = function (pitch) {
  * @param {Function} [cb] - optional callback function (use it when sound has a fade out)
  */
 Sound.prototype.stop = function (cb) {
+	// clear sound on end timeout if set
+	if (this._onEnd !== null) {
+		window.clearTimeout(this._onEnd);
+		this._onEnd = null;
+	}
+
 	this._audio.pause();
 	this._audio.currentTime = 0;
 	this._playTriggered = 0;

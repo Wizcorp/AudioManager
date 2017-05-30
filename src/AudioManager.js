@@ -15,6 +15,8 @@ if (!AudioContext) {
 }
 
 
+var NO_SOUND = new ISound();
+
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Audio manager
  * @author  Cedric Stoquer
@@ -387,13 +389,14 @@ AudioManager.prototype.release = function () {
  * @param {number} [pitch]   - optional pitch value in semi-tone. Only work with webAudio enabled
  */
 AudioManager.prototype.playSound = function (channelId, soundId, volume, pan, pitch) {
-	if (this.muted) return;
+	if (this.muted) return NO_SOUND;
 	var channel = this.channels[channelId];
-	if (channel.muted) return;
+	if (channel.muted) return NO_SOUND;
 	var sound = this.getSound(soundId);
 	if (!sound) { sound = this.createSound(soundId, channelId); }
 	volume = volume || 1.0;
 	sound.play(channel.volume * volume, pan, pitch);
+	return sound;
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄

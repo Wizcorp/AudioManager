@@ -85,6 +85,18 @@ Alternatively, sounds can be played outside channels.
 var sound = audioManager.createSound(fileName);
 sound.play(volume, panoramic, pitch); // all parameters are optional.
 ```
+
+### Detect playback end
+
+An `onEnd` callback function can be set to be triggered everytime the playback ends.
+Set it back to `null` to remove it.
+```javascript
+sound.onEnd = function () {
+	console.log('sound playback ended');
+	sound.onEnd = null;
+};
+```
+
 ### Change pitch
 This feature is only available with WebAudio.
 

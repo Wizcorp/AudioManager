@@ -909,6 +909,8 @@ if (!AudioContext) {
 }
 
 
+var NO_SOUND = new ISound();
+
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /** Audio manager
  * @author  Cedric Stoquer
@@ -1281,13 +1283,14 @@ AudioManager.prototype.release = function () {
  * @param {number} [pitch]   - optional pitch value in semi-tone. Only work with webAudio enabled
  */
 AudioManager.prototype.playSound = function (channelId, soundId, volume, pan, pitch) {
-	if (this.muted) return;
+	if (this.muted) return NO_SOUND;
 	var channel = this.channels[channelId];
-	if (channel.muted) return;
+	if (channel.muted) return NO_SOUND;
 	var sound = this.getSound(soundId);
 	if (!sound) { sound = this.createSound(soundId, channelId); }
 	volume = volume || 1.0;
 	sound.play(channel.volume * volume, pan, pitch);
+	return sound;
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -1355,6 +1358,7 @@ function ISound() {
 	this.fade            = 0;
 	this.usedMemory      = 0;
 	this.poolRef         = null;
+	this.onEnd           = null;
 
 	// the following properties are public but should NOT be assigned directly.
 	// instead, use the setter functions: setId, setVolume, setPan, setLoop, setPitch.
@@ -1844,6 +1848,7 @@ function Sound() {
 	audio.loop  = false;
 	audio.type  = 'audio/mpeg';
 	this._audio = audio;
+	this._onEnd = null;
 
 	// if available, use webAudio for better performances
 	if (this.audioContext) {
@@ -1942,6 +1947,18 @@ Sound.prototype._play = function (pitch) {
 	this._audio.currentTime = 0;
 	this._audio.play(PLAY_OPTIONS);
 	this.playing = true;
+
+	// add timeout to determine when sound playback has ended
+	if (this.loop) return;
+	var duration = this._audio.duration * 1000;
+	if (isNaN(duration) || duration <= 0) return;
+
+	var self = this;
+	this._onEnd = window.setTimeout(function () {
+		self._onEnd   = null;
+		self._playing = false;
+		self.onEnd && self.onEnd();
+	}, duration);
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
@@ -1950,6 +1967,12 @@ Sound.prototype._play = function (pitch) {
  * @param {Function} [cb] - optional callback function (use it when sound has a fade out)
  */
 Sound.prototype.stop = function (cb) {
+	// clear sound on end timeout if set
+	if (this._onEnd !== null) {
+		window.clearTimeout(this._onEnd);
+		this._onEnd = null;
+	}
+
 	this._audio.pause();
 	this._audio.currentTime = 0;
 	this._playTriggered = 0;
@@ -2292,6 +2315,7 @@ SoundBuffered.prototype._play = function (pitch) {
 		self.playing       = false;
 		sourceNode.onended = null;
 		self.source        = null;
+		self.onEnd && self.onEnd();
 	};
 
 	this._playPitch = pitch || 0;
